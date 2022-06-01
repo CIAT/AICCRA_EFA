@@ -1,0 +1,21 @@
+﻿System,Variable,Filename,ShortName
+Bovine meat,VOP,bvmeat_vop_00.tif,Bovine_meat
+Bovine milk,VOP,bvmilk_vop_00.tif,Bovine_milk
+All livestock exc. low density poultry,VOP,hipo_vop_00.tif,Livestock_noLDpoultry
+All livestock,VOP,ls_vop_00.tif,Livestock
+All livestock exc. poultry,VOP,nopo_vop_00.tif,Livestock_noPoultry
+Pig meat,VOP,pimeat_vop_00.tif,Pig_meat
+Poultry,VOP,po_vop_00.tif,Poultry
+Ruminants,VOP,rum_vop_00.tif,Ruminants
+Sheep and goat milk,VOP,sgmilk_vop_00.tif,Shoat_milk
+Sheep and goat meat ,VOP,sgmeat_vop_00.tif,Shoat_meat
+Bovine meat,MeatYield,bvmeat_kg_00.tif,Bovine_meat
+Bovine milk,MeatYield,bvmilk_kg_00.tif,Bovine_milk
+All livestock exc. low density poultry,MeatYield,hipo_kg_00.tif,Livestock_noLDpoultry
+All livestock,MeatYield,ls_kg_00.tif,Livestock
+All livestock exc. poultry,MeatYield,nopo_kg_00.tif,Livestock_noPoultry
+Pig meat,MeatYield,pimeat_kg_00.tif,Pig_meat
+Poultry,MeatYield,po_kg_00.tif,Poultry
+Ruminants,MeatYield,rum_kg_00.tif,Ruminants
+Sheep and goat milk,MeatYield,sgmilk_kg_00.tif,Shoat_milk
+Sheep and goat meat ,MeatYield,sgmeat_kg_00.tif,Shoat_meat
