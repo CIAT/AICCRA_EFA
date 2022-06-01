@@ -1,0 +1,43 @@
+CropNo,Crop,CropCode
+1,wheat,WHEA
+2,rice,RICE
+3,maize,MAIZ
+4,barley,BARL
+5,pearl millet,PMIL
+6,small millet,SMIL
+7,sorghum,SORG
+8,other cereals,OCER
+9,potato,POTA
+10,sweet potato,SWPO
+11,yams,YAMS
+12,cassava,CASS
+13,other roots,ORTS
+14,bean,BEAN
+15,chickpea,CHIC
+16,cowpea,COWP
+17,pigeonpea,PIGE
+18,lentil,LENT
+19,other pulses,OPUL
+20,soybean,SOYB
+21,groundnut,GROU
+22,coconut,CNUT
+23,oilpalm,OILP
+24,sunflower,SUNF
+25,rapeseed,RAPE
+26,sesameseed,SESA
+27,other oil crops,OOIL
+28,sugarcane,SUGC
+29,sugarbeet,SUGB
+30,cotton,COTT
+31,other fibre crops ,OFIB
+32,arabica coffee,ACOF
+33,robusta coffee,RCOF
+34,cocoa,COCO
+35,tea,TEAS
+36,tobacco,TOBA
+37,banana,BANA
+38,plantain,PLNT
+39,tropical fruit,TROF
+40,temperate fruit,TEMF
+41,vegetables,VEGE
+42,rest of crops,REST
