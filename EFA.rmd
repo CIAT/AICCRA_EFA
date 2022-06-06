@@ -7,7 +7,7 @@ runtime: shiny
 ---
 <style type="text/css">
 .main-container {
-  max-width: 1200px;
+  max-width: 1800px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -17,7 +17,7 @@ runtime: shiny
 knitr::opts_chunk$set(echo = F)
 ```
 
-```{r Setup - load packages,echo=F}
+```{r Setup - load packages,echo=F,message=FALSE}
 if(!require("pacman", character.only = TRUE)){install.packages("pacman",dependencies = T)}
 
 required.packages <- c("colourpicker",
@@ -25,6 +25,7 @@ required.packages <- c("colourpicker",
                        "dplyr",
                        "DT",
                        "raster",
+                       "rgdal",
                        "terra",
                        "sf",
                        "viridis")
@@ -98,7 +99,7 @@ numericInput(inputId="Plot.Width",
   selectInput(inputId="LegPos", 
               label="Legend position",
               choices = c("bottomright", "bottom", "bottomleft", "left", "topleft", "top", "topright", "right","center"),
-              selected="bottomright", 
+              selected="bottomleft", 
               multiple = F,
               width="150px")
 ```
@@ -115,10 +116,28 @@ numericInput(inputId="Plot.Width",
 ```
 :::
 :::{}
-```{r Plot - Polygon boundary colour picker, echo =F}
-  colourInput(inputId="BorderCol",
-              label="Polygon border colour",
-              value="black")
+```{r Plot - Border width , echo=F}
+numericInput(inputId="borderwidth",
+             label="Border width",
+             value=2,
+             min=0.1,
+             max=3,
+             step=0.1,
+             width="120px")
+```
+:::
+:::{}
+```{r Plot - Polygon boundary colour picker core, echo =F}
+  colourInput(inputId="BorderColCore",
+              label="Core country border colour",
+              value="#000000")
+```
+:::
+:::{}
+```{r Plot - Polygon boundary colour picker spill, echo =F}
+  colourInput(inputId="BorderColSpill",
+              label="Spillover country border colour",
+              value="#000000")
 ```
 :::
 ::::
@@ -128,66 +147,37 @@ numericInput(inputId="Plot.Width",
   Plot.Width <- function(){input$PlotBaseWidth*input$Plot.Width}
 ```
 
+### Philosophy
+
+This economic and financial analysis (EFA) of project benefits is designed to explore:  
+
+* Increased productivity and enhanced climate resilience (reduced production variability) of technology adoption
+* More widespread adoption of CSA technologies due to regional spillovers.  
+
+*Caveat: These benefits fall under the sphere of influence of the Project, but not under the sphere of control, because they depend in part on factors beyond the control of the Project (e.g., price incentives, availability of purchased inputs, weather conditions, etc.).*
+
+The EFA is carried out in several stages:  
+
+1. **Datasets:** Choose the core and spillover countries that will benefit from project activities;  
+2. **Datasets:** Choose farm classification system and target classes; 
+3. **Datasets:** Choose target crops, type of MapSPAM cropping system (e.g. rainfed, irrigated or all) and type of MapSPAM area statistic (physical area or harvested area);
+4. **Datasets:** Choose target Herrero livestock categories;
+5. **Analysis: Productivity increment value** Calculate the value of the benefit that would result from a 1% increase in crop and livestock productivity over the selected core areas (the increment can be adjusted);  
+6. **Analysis: Marginal increase in value** The value of the benefits is adjusted in recognition of the fact that adoption will occur gradually over time and will not reach the entire area.
+7. **Analysis: Avoided losses from reduction in CV**
+8. **Analysis: Investment indicators**
+
+All spatial variables are standardized to grids of 5 arcminute resolution.
+
 ### Datasets {.tabset .tabset-fade .tabset-pills}
 
-```{r Livestock - Choose systems}
-LSvop_options<-data.table::fread("Data/Herrero/LS Files.csv")
-
-checkboxGroupInput(inputId="LSChoice", 
-         label= "Livestock systems", 
-         choices = LSvop_options[,sort(unique(System))], 
-         selected = c("Bovine meat"),
-         inline = T)
+```{r Datasets - Set base raster,echo=F}
+# Set Base Raster
+BaseRaster<-terra::rast("Data/cell5m_livestock_vop.tif")
 ```
 
-
-:::: {style="display: flex;"}
-::: {}
-```{r Crops - Choose MapSPAM technology}
-MS_options<-data.table::fread("Data/MapSPAM/MS Files.csv")
-
-selectInput(inputId="MSTech", 
-         label= "Crop technology", 
-         choices = MS_options[,sort(unique(Tech))], 
-         selected = c("all technologies"),
-         multiple = F,
-         width="150px")
-
-MSTechCode<-reactive({MS_options[Tech==input$MSTech,unique(TechCode)]})
-```
-:::
-:::{}
-```{r Crops - Choose MapSPAM area type}
-selectInput(inputId="MSAreaType", 
-         label= "MapSPAM area type", 
-         choices = c("physical","harvested"), 
-         selected = c("harvested"),
-         multiple = F,
-         width="150px")
-```
-:::
-:::{}
-```{r Extraction - Include totals,echo=F}
-selectInput(inputId="IncTot", 
-         label= "Extract totals?", 
-         choices = c("Yes","No"), 
-         selected = c("No"),
-         multiple = F,
-         width="150px")
-```
-:::
-::::
-```{r Crop - Choose crops}
-renderUI({
-checkboxGroupInput(inputId="CropChoice", 
-         label= "Crop", 
-         choices = MS_options[TechCode==MSTechCode(),sort(unique(Crop))], 
-         selected = c("maize","bean","cassava"),
-         inline = T)
-})
-```
-
-
+**Core and spillover countries**
+*Choose core countries 1st (changing core resets spillover) and always keep 1 core country selected else the script may crash*
 ```{r Geographies - Load CGIAR countries (evaluated),echo=F,eval=T}
 CGIAR_countries_sf<-sf::read_sf("Data/CGIAR_region/CGIAR_countries_simplified.shp",options = "ENCODING=UTF8")
 
@@ -209,11 +199,6 @@ checkboxGroupInput(inputId="CountriesChoice",
          selected = c("Kenya","Ethiopia","Ghana","Mali","Senegal","Zambia"),
          inline = T)
 
-
-
-ExtractBy.Core<-reactive({
-  CGIAR_countries[CGIAR_countries$ADMIN %in% input$CountriesChoice]
-})
 ```
 :::
 :::{}
@@ -228,44 +213,238 @@ renderUI({
            inline = T)
 })
 
+ExtractBy.Core<-reactive({
+  CGIAR_countries[CGIAR_countries$ADMIN %in% input$CountriesChoice]
+})
+
 ExtractBy.Spillover<-reactive({
   CGIAR_countries[CGIAR_countries$ADMIN %in% input$SpillCountriesChoice]
 })
+
+ExtractBy.All<-reactive({
+  CGIAR_countries[CGIAR_countries$ADMIN %in% c(input$SpillCountriesChoice,input$CountriesChoice)]
+})
+
+
 ```
 :::
 ::::
 
-```{r Datasets - Set base raster,echo=F}
-# Set Base Raster
-BaseRaster<-terra::rast("Data/cell5m_livestock_vop.tif")
+**Farming systems**
+```{r Farming Systems, echo=F,eval=T}
+
+if(!file.exists("Data/Farming_systems/FS1.tif")){
+FarmSys<-terra::vect("Data/Farming_systems/fs_lev_2_update.shp")
+
+FarmSys$LEV1_DESC<-data.table::tstrsplit(FarmSys$LEV1_DESC,"[.] ",keep=2)[[1]]
+FarmSys$Code1<-unlist(lapply(strsplit(FarmSys$LEV1_DESC," "),FUN=function(X){
+  paste(
+    c(
+      stringr::str_to_title(substr(X[1],1,2)),
+      stringr::str_to_title(substr(X[2:length(X)],1,1))
+    ),collapse="")
+}))
+
+FarmSys$Code2<-unlist(lapply(strsplit(FarmSys$LEV2_DESC," |-"),FUN=function(X){
+  paste(
+    c(
+      stringr::str_to_title(substr(X[1],1,2)),
+      stringr::str_to_title(substr(X[2:length(X)],1,1))
+    ),collapse="")
+}))
+
+
+FS1<-terra::aggregate(FarmSys[,c("LEV1_DESC")],"LEV1_DESC")
+FS1<-terra::rasterize(FS1,BaseRaster,"LEV1_DESC",fun="near")
+
+FS2<-terra::rasterize(FarmSys[,c("LEV2_DESC")],BaseRaster,"LEV2_DESC",fun=getmode)
+
+FS_Metadata<-terra::values(FarmSys)
+
+terra::writeRaster(FS1,filename="Data/Farming_systems/FS1.tif")
+terra::writeRaster(FS2,filename="Data/Farming_systems/FS2.tif")
+data.table::fwrite(FS_Metadata,file="Data/Farming_systems/FS_Metadata.csv")
+}else{
+ FS1<-terra::rast("Data/Farming_systems/FS1.tif")
+ FS2<-terra::rast("Data/Farming_systems/FS2.tif")
+ FS_Metadata<-data.table::fread("Data/Farming_systems/FS_Metadata.csv") 
+}
+
+# GLPS
+GPLS_Legend<-data.table::fread("Data/GLPS/LPS_legend_RGB.csv")
+
+LPS<-terra::crop(terra::resample(terra::rast("Data/GLPS/glps_gleam_61113_10km.tif"),BaseRaster,method="near"),CGIAR_countries)
+LPS<-terra::mask(LPS,CGIAR_countries)
+LPS<-LPS-1
+LPS<-terra::as.factor(LPS)
+LPS<-terra::categories(LPS,layer=1,value=GPLS_Legend$System_Full)
+
 ```
+
+:::: {style="display: flex;"}
+::: {}
+```{r Farming System - Choose classification, echo=F}
+selectInput(inputId="FS_Choice", 
+         label= "Classification", 
+         choices = c("GLPS","Adaptation Atlas L1","Adaptation Atlas L2"), 
+         selected = c("GLPS"),
+         multiple = F,
+         width="200px")
+
+FS_Selected<-reactive({
+    if(input$FS_Choice=="GLPS"){
+     LPS
+  }else{
+    if(input$FS_Choice=="Adaptation Atlas L1"){
+      FS1
+    }else{
+      FS2
+      }
+  }
+})
+```
+:::
+:::{}
+```{r Farming System - Choose Systems, echo=F}
+
+FS_Options_Fun<-function(FS_Selected,ExtractBy.All){
+  Mapped<-data.table(N=sort(unique(FS_Selected[])),Level=terra::levels(FS_Selected)[[1]])
+  FS<-terra::mask(FS_Selected,ExtractBy.All)
+  FSVals<-unique(FS[!is.na(FS)][])
+  return(Mapped[N %in% FSVals,sort(Level)])
+}
+
+FS_Options<-reactive({
+  FS_Options_Fun(FS_Selected=FS_Selected(),
+                 ExtractBy.All=ExtractBy.All())
+})
+
+renderUI({
+  checkboxGroupInput(inputId="FS_Systems", 
+           label= NULL, 
+           choices = FS_Options(), 
+           selected = FS_Options()[!FS_Options() %in% c("Urban","Unsuitable")],
+           inline = T)
+})
+
+```
+:::
+::::
+
+**Crops**
+
+:::: {style="display: flex;"}
+::: {}
+```{r Crops - Choose MapSPAM technology}
+MS_options<-data.table::fread("Data/MapSPAM/MS Files.csv")
+
+selectInput(inputId="MSTech", 
+         label= "MapSPAM technology", 
+         choices = MS_options[,sort(unique(Tech))], 
+         selected = c("all technologies"),
+         multiple = F,
+         width="200px")
+
+MSTechCode<-reactive({MS_options[Tech==input$MSTech,unique(TechCode)]})
+```
+:::
+:::{}
+```{r Crops - Choose MapSPAM area type}
+selectInput(inputId="MSAreaType", 
+         label= "MapSPAM area type", 
+         choices = c("physical","harvested"), 
+         selected = c("harvested"),
+         multiple = F,
+         width="200px")
+```
+:::
+:::{}
+```{r Extraction - Include totals,echo=F}
+selectInput(inputId="IncTot", 
+         label= "Extract totals?", 
+         choices = c("Yes","No"), 
+         selected = c("No"),
+         multiple = F,
+         width="150px")
+```
+:::
+::::
+```{r Crop - Choose crops}
+renderUI({
+checkboxGroupInput(inputId="CropChoice", 
+         label= NULL, 
+         choices = MS_options[TechCode==MSTechCode(),sort(unique(Crop))], 
+         selected = c("maize","bean","cassava"),
+         inline = T)
+})
+```
+
+**Livestock**
+
+```{r Livestock - Choose systems}
+LSvop_options<-data.table::fread("Data/Herrero/LS Files.csv")
+
+checkboxGroupInput(inputId="LSChoice", 
+         label= NULL, 
+         choices = LSvop_options[,sort(unique(System))], 
+         selected = c("Bovine meat"),
+         inline = T)
+```
+
 #### Countries
-```{r Datasets - CGIAR countries,echo=T,eval=F}
-CGIAR_countries_sf<-sf::read_sf("Data/CGIAR_region/CGIAR_countries_simplified.shp",options = "ENCODING=UTF8")
-
-CGIAR_countries_sf<-CGIAR_countries_sf[CGIAR_countries_sf$CG_REG %in% c("ESA","WCA") |
-                                         CGIAR_countries_sf$ADMIN %in% c("Morocco","Western Sahara","Libya","Egypt","Algeria","Tunisia","Sudan"),]
-
-sf::st_crs(CGIAR_countries_sf)<-4326
-CGIAR_countries_sf$ADMIN[CGIAR_countries_sf$ADMIN=="United Republic of Tanzania"]<-"Tanzania"
-CGIAR_countries_sf$ADMIN[CGIAR_countries_sf$ADMIN=="Ivory Coast"]<-"Cote d'Ivoire"
-CGIAR_countries<-terra::vect(CGIAR_countries_sf)
-```
-
 ```{r Datasets - Crop base raster,echo=F}
 BaseRaster<-terra::crop(BaseRaster,CGIAR_countries)
 CellSize.km<-terra::cellSize(BaseRaster,mask=T, unit="km")
+
+CountryRast<-terra::rasterize(CGIAR_countries,BaseRaster,"ADMIN")
+CountryAreas<-data.table(
+  terra::zonal(
+    x=terra::cellSize(CountryRast,mask=T,"km"),
+    z=CountryRast,
+    sum))
+
+CGCountriesFun<-function(CGIAR_countries,CountriesChoice,SpillCountriesChoice,CoreColour,SpillColour){
+  CGIAR_countries$Choice<-NA
+  CGIAR_countries$Colour<-NA
+  CGIAR_countries$Linetype<-0
+  
+  CGIAR_countries[CGIAR_countries$ADMIN %in% CountriesChoice]$Choice<-"Core"
+  CGIAR_countries[CGIAR_countries$ADMIN %in% SpillCountriesChoice]$Choice<-"Spillover"
+  
+  CGIAR_countries[CGIAR_countries$ADMIN %in% CountriesChoice]$Colour<-CoreColour
+  CGIAR_countries[CGIAR_countries$ADMIN %in% SpillCountriesChoice]$Colour<-SpillColour
+  
+  CGIAR_countries[CGIAR_countries$ADMIN %in% CountriesChoice]$Linetype<-1 #"solid"
+  CGIAR_countries[CGIAR_countries$ADMIN %in% SpillCountriesChoice]$Linetype<-2 #"dashed"
+ 
+  return(CGIAR_countries)
+}
+
+CGIAR_countries2<-reactive({
+  CGCountriesFun(CGIAR_countries=CGIAR_countries,
+                 CountriesChoice=input$CountriesChoice,
+                 SpillCountriesChoice=input$SpillCountriesChoice,
+                 CoreColour=input$BorderColCore,
+                 SpillColour=input$BorderColSpill)
+})
+
+AddBorders<-reactive({
+  function() {
+    terra::plot(CGIAR_countries2(),add=T,border=CGIAR_countries2()$Colour,lwd=input$borderwidth,lty=CGIAR_countries2()$Linetype)
+  }
+})
+
+
 ```
 
 ```{r Datasets - plot CGIAR Countries, echo =F}
-renderPlot({terra::plot(CGIAR_countries,
-                        "ADMIN",
-                        main="CG Countries",
-                        border=input$BorderCol,
-                        legend=F,
+renderPlot({terra::plot(CGIAR_countries2(),
+                        "Choice",
+                        main="Selected countries",
+                        border="black",
+                        legend=input$LegPos,
                         type="classes",
                         pax=list(cex.axis=input$TextSize),
-                        col=sample(viridis(n=length(CGIAR_countries),option =input$Palette),replace=F),
                         cex.main = input$TextSize*1.2,
                         axes = F,
                         frame.plot= F
@@ -273,55 +452,68 @@ renderPlot({terra::plot(CGIAR_countries,
            height=Plot.Height, width=Plot.Width)
 ```
 
-#### Livestock {.tabset .tabset-fade .tabset-pills}
-
-##### Production Systems
+#### Farming Systems
 [GLPC Livestock Production Systems (LPS) map](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/WPDSZE) by [Robinson et al. 2014](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0096084)
-```{r Datasets - GLPS, echo = T}
-# GLPS
-LPS<-terra::resample(terra::rast("Data/GLPS/glps_gleam_61113_10km.tif"),BaseRaster,method="near")
-LPS<-terra::mask(LPS,CGIAR_countries)
-GPLS_Legend<-data.table::fread("Data/GLPS/LPS_legend_RGB.csv")
-GPLS_Legend[,!c("System","Irrigation","Aridity")]
 
+*ADD DETAILS FOR ADAPTATION ATLAS LAYERS*
+```{r Datasets - Subset farming system, echo = F}
 
-LPS_Suitable<-copy(LPS)
-LPS_Suitable[which(LPS_Suitable[] %in% c(13,14,15))]<-NA
-LPS_Suitable<-LPS_Suitable-1
-levels(LPS_Suitable)<-GPLS_Legend[1:12,System_Full]
-names(LPS_Suitable)<-"LPS_Suitable"
+FSsub_Fun<-function(FS,Choice,Mask){
+  Mapped<-data.table(N=sort(unique(FS2[])),Level=terra::levels(FS)[[1]])
+  N<-Mapped[Level %in% Choice,N]
+  
+  FS[which(!FS[] %in% N)]<-NA
+  
+  FS<-terra::mask(terra::crop(FS,Mask),Mask)
+  
+  names(FS)<-"Farming_System" # Previously called LPS_Suitable
+  return(FS)
+ }
+
+# LPS_Suitable()
+Farming_System<-reactive({
+  FSsub_Fun(FS=FS_Selected(),
+            Choice = input$FS_Systems,
+            Mask = ExtractBy.All())
+})
+
 ```
 
-```{r Datasets- Plot GLPS, echo =F}
-renderPlot({terra::plot(mask(LPS_Suitable,CGIAR_countries),
+```{r Datasets- Plot farming system, echo =F}
+renderPlot({terra::plot(Farming_System(),
                         main="Global Distribution of LPS (Robinson et al. 2014)",
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),option =input$Palette,direction = if(input$Palette=="turbo"){1}else{-1}),
+                        col=viridis(n=length(levels(Farming_System())[[1]]), 
+                                    option =input$Palette,
+                                    direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
                         axes = F,
+                        legend = input$LegPos, 
                         frame.plot= F)
-          terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
+          terra::plot(CGIAR_countries2(),add=T,border=CGIAR_countries2()$Colour,lwd=input$borderwidth,lty=CGIAR_countries2()$Linetype)
   },height=Plot.Height, width=Plot.Width)
 ```
 
-##### Value & Yield
+#### Livestock {.tabset .tabset-fade .tabset-pills}
+##### Value & Yield {.tabset .tabset-fade .tabset-pills}
 These datasets come from [Herrero et al. 2013](https://www.pnas.org/doi/abs/10.1073/pnas.1308149110) in particular see the [supporting information](https://www.pnas.org/doi/suppl/10.1073/pnas.1308149110/suppl_file/sapp.pdf) for a detailed explanation of their methods.
 
 Phil Thorton confirms that livestock VoP (as for crops) was calculated as production (t) times price ($/t). In the PNAS dataset, one international (global) price was used for each commodity for comparability, and these were 2005 dollars.
 
-**Value of production (VoP**
-*VoP units are USD/km2/yr*
-```{r Datasets - Load LSvop,echo=T}
+###### Value of production (VoP) 
+```{r Datasets - Load LSvop,echo=F}
+# *CellSize.km to convert to USD/km2/year to USD/km/pixel
+
 LSvop1<-reactive({
-  terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="VOP",Filename]))
+  terra::mask(terra::crop(
+     terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="VOP",Filename]))*CellSize.km
+  ,Farming_System()),Farming_System())
 })
 
-# Convert to USD/km2/yer to USD/km/pixel
-LSvop2<-reactive({LSvop1()*CellSize.km})
 ```
 
-```{r Datasets - LS rename and add totals}
+```{r Datasets - LS rename and add totals, echo=F}
 
 LSfun<-function(Data,Choice,Extension,TotalName,DoSum=T,IncTot){
   names(Data)<-paste0(Choice,Extension)
@@ -337,63 +529,86 @@ LSfun<-function(Data,Choice,Extension,TotalName,DoSum=T,IncTot){
 
 # Rename layers
 LSvop<-reactive({
-  LSfun(Data=LSvop2(),Choice=input$LSChoice,Extension="_vop",TotalName="LS",IncTot=input$IncTot)
+  LSfun(Data=LSvop1(),Choice=input$LSChoice,Extension="_vop",TotalName="LS",IncTot=input$IncTot)
 })
 
 
 ```
 
+**Value of livestock production  ln(USD)/pixel**
 ```{r Datasets - Plot LSvop, echo =F}
-renderPlot({terra::plot(LSvop1(),
-                        main="Value of livestock production (USD/pixel)",
+renderPlot({terra::plot(log(LSvop1()),
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
                         axes = F,
                         frame.plot= F)
-            terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
-**Yield & Production**
-*Meat or milk yield units are kg/km2/yr*
-```{r Datasets - Load LSyield,echo=T}
+###### Yield & Production
+```{r Datasets - Load LSyield,echo=F}
 LSyield<-reactive({
-  terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))
+  terra::mask(terra::crop(
+    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename])) 
+  ,Farming_System()),Farming_System())
 })
-# Convert to value per pixel
-LSprod2<-reactive({LSyield()*CellSize.km})
+
+# *CellSize.km converts yield to production per pixel
+LSprod2<-reactive({
+  terra::mask(terra::crop(
+    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))*CellSize.km 
+  ,Farming_System()),Farming_System())
+})
 
 # Rename layers
 LSprod<-reactive({
   LSfun(Data=LSprod2(),Choice=input$LSChoice,Extension="_prod",TotalName="LS",IncTot=input$IncTot)
 })
+
 ```
 
+**Livestock production ln(kg)/pixel**
 ```{r Datasets - Plot LSprod, echo =F}
-renderPlot({terra::plot(LSprod(),
-                        main="Livestock production (kg/pixel)",
+renderPlot({terra::plot(log(LSprod()),
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
+                                    option =input$Palette,
+                                    direction = if(input$Palette=="turbo"){1}else{-1}),
+                        cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
+                        axes = F,
+                        frame.plot= F)
+  },height=Plot.Height, width=Plot.Width)
+```
+
+**Livestock yield ln(kg)/km2**
+```{r Datasets - Plot LSyield, echo =F}
+renderPlot({terra::plot(log(LSyield()),
+                        fun=AddBorders(),
+                        pax=list(cex.axis=input$TextSize),
+                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
                         axes = F,
                         frame.plot= F)
-          terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
-
-**LS Area**
+###### LS Area
 *Note that we do not have a layer for this data so cellsize is currently substituted.*
-```{r Datasets - Load LSarea,echo=T}
-LSareaFun<-function(CellSize.km,LSChoice){
+```{r Datasets - Load LSarea,echo=F}
+LSareaFun<-function(CellSize.km,LSChoice,Mask){
   X<-CellSize.km
+  X<-terra::mask(terra::crop(X,Mask),Mask)
   if(length(LSChoice)>1){
   for(i in 1:length(LSChoice)){
       X<-c(X,CellSize.km)
@@ -403,7 +618,7 @@ LSareaFun<-function(CellSize.km,LSChoice){
   }
 
 LSarea1<-reactive({
-  LSareaFun(CellSize.km,input$LSChoice)
+  LSareaFun(CellSize.km,input$LSChoice,Mask=Farming_System())
 })
 
 # Rename layers
@@ -415,30 +630,30 @@ LSarea<-reactive({
 
 ```{r Datasets - Plot LSarea, echo =F}
 renderPlot({terra::plot(LSarea(),
-                        main="Livestock area (pixel size at present)",
+                        fun=AddBorders(),
+                        main="Livestock area (pixel size)",
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        lengend = input$LegPos,
                         axes = F,
                         frame.plot= F)
-          terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
 #### Crops {.tabset .tabset-fade .tabset-pills}
-**MapSPAM datasets are used for crop VoP, Yield, Total Production and Area**
-
-MAPSPAM data can be downloaded [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FSSKBW) and methods reviewed [here](https://www.mapspam.info/methodology/).
+MapSPAM datasets are used for crop VoP, Yield, Total Production and Area and can be downloaded [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FSSKBW) and methods reviewed [here](https://www.mapspam.info/methodology/).
 
 Citation: *International Food Policy Research Institute, 2020, "Spatially-Disaggregated Crop Production Statistics Data in Africa South of the Sahara for 2017", https://doi.org/10.7910/DVN/FSSKBW, Harvard Dataverse, V3*
 
 ##### Value of Production (VoP)
+*SPAM’s cross entropy starts with prior knowledge of where crops may be grown and to which extent. It assumes that farmers, given a choice of different crops, will grow those which generate more revenue. And this is where crop prices come in. We use a different price for every crop, but the same price for all countries: 2004-2006 average international price, as used by FAO to compute Value of Production.*  
 Download VoP [here](https://dataverse.harvard.edu/file.xhtml?fileId=4271679&version=3.0).
 
-```{r Datasets - Load MapSPAM VoP,echo=T}
+```{r Datasets - Load MapSPAM VoP,echo=F}
 MSfun<-function(VAR,TECH,CROPS,BaseRaster,MASK,MS_options,Name,IncTot){
   FILES<-MS_options[Variable == VAR & TechCode == TECH & Crop %in% CROPS,]
   
@@ -450,10 +665,8 @@ MSfun<-function(VAR,TECH,CROPS,BaseRaster,MASK,MS_options,Name,IncTot){
         ))))
   unlink(FILES[,Filename])
   
-  #X<-terra::rast(FILES[,paste0("Data/MapSPAM/",Filename)])
-  
   X<-terra::resample(X,BaseRaster,method="near")
-  X<-terra::mask(X,MASK)
+  X<-terra::mask(terra::crop(X,MASK),MASK)
   names(X)<-FILES[,paste0(CROPS,Name)]
   
   if(length(CROPS)>1 & IncTot=="Yes"){
@@ -468,7 +681,7 @@ MSvop<-reactive({
           TECH=MSTechCode(),
           CROPS=input$CropChoice,
           BaseRaster=BaseRaster,
-          MASK=CGIAR_countries,
+          MASK=Farming_System(),
           MS_options=MS_options,
           Name="_vop",
           IncTot=input$IncTot)
@@ -476,53 +689,57 @@ MSvop<-reactive({
 
 ```
 
-**MapSPAM Crop Value of Production - million USD/pixel**
+**MapSPAM Crop Value of Production (ln USD/pixel)**
 ```{r Datasets - Plot MSvop, echo =F}
-renderPlot({terra::plot(round(MSvop()/10^6,1),
+renderPlot({terra::plot(log(MSvop()),
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
                         axes = F,
                         frame.plot= F)
-            terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
 
 ##### Area
+**Physical area** *is measured in a hectare and represents the actual area where a crop is grown, not counting how often production was harvested from it. Physical area is calculated for each production system and crop, and the sum of all physical areas of the four production systems constitute the total physical area for that crop. The sum of the physical areas of all crops in a pixel may not be larger than the pixel size.*  
 Download crop physical area [here](https://dataverse.harvard.edu/file.xhtml?fileId=4271676&version=3.0).
+
+**Harvested area** *is also measured in a hectare, and  is at least as large as physical area, but sometimes more, since it also accounts for multiple harvests of a crop on the same plot. Like for physical area, the harvested area is calculated for each production system and the sum of all harvested areas of all production systems in a pixel amount to the total harvested area of the pixel. The sum of all the harvested areas of the crops in a pixel can be larger than the pixel size.*  
 Download crop harvested area [here](https://dataverse.harvard.edu/file.xhtml?fileId=4271688&version=3.0).
 
-```{r Datasets - MapSPAM physical area, echo=T}
+```{r Datasets - MapSPAM physical area, echo=F}
 MShparea<-reactive({
     MSfun(VAR="PhysArea",
           TECH=MSTechCode(),
           CROPS=input$CropChoice,
           BaseRaster=BaseRaster,
-          MASK=CGIAR_countries,
+          MASK=Farming_System(),
           MS_options=MS_options,
           Name="_area",
           IncTot=input$IncTot)
 })
 ```
 
-```{r Datasets - MapSPAM harvested area, echo=T}
+```{r Datasets - MapSPAM harvested area, echo=F}
 MSharea<-reactive({
     MSfun(VAR="HarvArea",
           TECH=MSTechCode(),
           CROPS=input$CropChoice,
           BaseRaster=BaseRaster,
-          MASK=CGIAR_countries,
+          MASK=Farming_System(),
           MS_options=MS_options,
           Name="_area",
           IncTot=input$IncTot)
 })
 ```
 
-```{r Set Area Type to be used in analysis,echo=T}
+```{r Set Area Type to be used in analysis,echo=F}
 MSarea<-reactive({
   if(input$MSAreaType=="Physical"){
      MShparea()
@@ -532,30 +749,33 @@ MSarea<-reactive({
 })
 ```
 
-**MapSPAM crop physical area - ha/pixel**
+**MapSPAM crop physical area - ln(ha)/pixel**
 ```{r Datasets - Plot MShparea, echo = F}
-renderPlot({terra::plot(MShparea(),
+renderPlot({terra::plot(log(MShparea()),
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
                         axes = F,
                         frame.plot= F)
             terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
-**MapSPAM crop harvested area - ha/pixel**
+**MapSPAM crop harvested area - log(ha)/pixel**
 ```{r Datasets - Plot MSharea, echo = F}
-renderPlot({terra::plot(MSharea(),
+renderPlot({terra::plot(log(MSharea()),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
                         axes = F,
                         frame.plot= F)
             terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
@@ -563,38 +783,43 @@ renderPlot({terra::plot(MSharea(),
 ```
 
 ##### Production
+**Production** *, for each production system and crop, is calculated by multiplying area harvested with yield. It is measured in metric tons. The total production of a crop includes the production of all production systems of that crop.*  
 Download crop production volume [here](https://dataverse.harvard.edu/file.xhtml?fileId=4271677&version=3.0).
 
-```{r Datasets - MapSPAM crop production, echo=T}
+```{r Datasets - MapSPAM crop production, echo=F}
 MSprod<-reactive({
     MSfun(VAR="Production",
           TECH=MSTechCode(),
           CROPS=input$CropChoice,
           BaseRaster=BaseRaster,
-          MASK=CGIAR_countries,
+          MASK=Farming_System(),
           MS_options=MS_options,
           Name="_prod",
           IncTot=input$IncTot)
 })
 ```
 
-**MapSPAM Production - ????/pixel**
+**MapSPAM Production - ln(tons)/pixel**
 ```{r Datasets - Plot MSprod, echo = F}
-renderPlot({terra::plot(MSprod(),
+renderPlot({terra::plot(log(MSprod()),         
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
                         axes = F,
                         frame.plot= F)
             terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
+*Yield is a measure of productivity, the amount of production per harvested area, and is measured in kilogram/hectare. The total yield of a crop, when considering all production systems, is not the sum of the individual yields, but the weighted average of the 4 yields. Note that we do not directly extract yield from MapSPAM rasters in this analysis, rather we calculate by dividing production by harvested area.*  
 
-#### FAOSTAT
+#### FAOSTAT{.tabset .tabset-fade .tabset-pills}
+##### Prepare Data
 ```{r Datasets - Load FAOSTAT, echo=T}
 FAODir<-"Data/FAO"
 FAOFile<-paste0(FAODir,"/FAO_prod.RData")
@@ -644,8 +869,9 @@ FAO_CV<-FAO_prod[,list(Mean=mean(value),
                        N.Years=.N),by=list(area,item,element,unit)]
 ```
 
-**Map FAO names to MapSPAM**
 ```{r Datasets -  Map FAO names to MapSPAM,echo=T}
+#Map FAO names to MapSPAM
+  
 MSCrops<-MS_options[,unique(Crop)]
 FAOCrops<-FAO_CV[,tolower(unique(item))]
 
@@ -693,8 +919,25 @@ CropMappings[MapSPAM=="tobacco",FAO:="tobacco, unmanufactured"]
 FAO_CV[,SpamName:=CropMappings[match(tolower(FAO_CV$item),CropMappings$FAO),MapSPAM]]
 FAO_CV<-FAO_CV[!is.na(SpamName)]
 
+FAO_prod[,SpamName:=CropMappings[match(tolower(FAO_prod$item),CropMappings$FAO),MapSPAM]]
+FAO_prod<-FAO_prod[!is.na(SpamName)]
+
 ```
 
+##### Raw Data
+```{r Datasets - FAOSTAT DT Raw, echo=F}
+  renderDT({
+    datatable(dplyr::mutate_if(FAO_prod,is.numeric,~round(.,3)),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+##### CV Data
 ```{r Datasets - FAOSTAT DT, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(FAO_CV,is.numeric,~round(.,3)),
@@ -707,36 +950,100 @@ FAO_CV<-FAO_CV[!is.na(SpamName)]
   })
 ```
 
+##### Plot
+```{r Datasets - Prepare FAO plot data,echo=F,eval=T}
+FAOPlot<-function(Map,FAO_CV,CropChoice){
+
+  for(CROP in CropChoice){
+    Data<-FAO_CV[SpamName == CROP]
+    N<-match(Map$ADMIN,Data$area)
+    Map[,paste0(CROP,"_CV")]<-Data[N,CV]
+    Map[,paste0(CROP,"_Mean")]<-Data[N,Mean]
+    
+    Map[is.na(Map$Choice),paste0(CROP,"_CV")]<-NA
+    Map[is.na(Map$Choice),paste0(CROP,"_Mean")]<-NA
+  }
+  
+  return(Map)
+}
+
+FAOCountries<-reactive({
+  FAOPlot(Map=CGIAR_countries2(),FAO_CV=FAO_CV,CropChoice=input$CropChoice)
+})
+
+```
+
+Countries with no fill colour indicate either a crop is not grown in this country or there is no yield information for the crop in FAOstat.
+
+**Coefficient of variation**
+```{r Datasets - plot FAO data CV, echo =F}
+renderPlot({terra::plot(FAOCountries(),
+                        paste0(input$CropChoice,"_CV"),
+                        border=FAOCountries()$Colour,
+                        lty=FAOCountries()$Linetype,
+                        legend=input$LegPos,
+                        type="continuous",
+                        pax=list(cex.axis=input$TextSize),
+                        cex.main = input$TextSize*1.2,
+                        axes = F,
+                        frame.plot= F
+                        )},
+           height=Plot.Height, width=Plot.Width)
+```
+
+**Mean yields**
+```{r Datasets - plot FAO data yields, echo =F}
+renderPlot({terra::plot(FAOCountries(),
+                        paste0(input$CropChoice,"_Mean"),
+                        border=FAOCountries()$Colour,
+                        lty=FAOCountries()$Linetype,
+                        legend=input$LegPos,
+                        type="continuous",
+                        pax=list(cex.axis=input$TextSize),
+                        cex.main = input$TextSize*1.2,
+                        axes = F,
+                        frame.plot= F
+                        )},
+           height=Plot.Height, width=Plot.Width)
+```
+
 #### Human population
 *Not currently used in the analysis*
 **--add dataset details--**
 **CHECK resampling method = "near" is correct**
-```{r Datasets - Load Hpop, echo = T}
+```{r Datasets - Load Hpop, echo = F}
 # Load and resample raster
-Hpop<-terra::resample(terra::rast(unzip("Data/Exposure/cell5m_ruralpop_2020_v3.zip")),BaseRaster,method="near")
+Hpop2<-terra::resample(terra::rast(unzip("Data/Exposure/cell5m_ruralpop_2020_v3.zip")),BaseRaster,method="near")
 # Force raster into memory 
-if(sources(Hpop)$source!=""){
-  Hpop<-terra::rast(raster::readAll(raster::raster(Hpop)))
+if(terra::sources(Hpop2)==""){
+  Hpop2<-terra::rast(raster::readAll(raster::raster(Hpop2)))
 }
+
 # Remove unzipped file
 unlink("cell5m_ruralpop_2020_v3.tif")
-# Mask raster to CGIAR countries
-Hpop<-terra::mask(Hpop,CGIAR_countries)
+
 # Name raster
-names(Hpop)<-"Hpop"
+names(Hpop2)<-"Hpop"
+
+Hpop<-reactive({
+  terra::mask(terra::crop(Hpop2,Farming_System()),Farming_System())
+})
+
 ```
 
+**ln(people)/pixel**
 ```{r Datasets - Plot Hpop, echo = F}
-renderPlot({terra::plot(Hpop,
+renderPlot({terra::plot(log(Hpop()),
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
                         axes = F,
                         frame.plot= F)
-            terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
@@ -744,93 +1051,37 @@ renderPlot({terra::plot(Hpop,
 *Not currently used in the analysis*
 **--add dataset details--**
 
-```{r Datasets - Load climate hazards, echo = T}
-RainCV<-terra::resample(terra::rast("Data/Hazards/chirps_cv.tif"),BaseRaster,method="near")
-RainCV<-terra::mask(RainCV,CGIAR_countries)
-names(RainCV)<-"RainCV"
+```{r Datasets - Load climate hazards, echo = F}
+RainCV2<-terra::resample(terra::rast("Data/Hazards/chirps_cv.tif"),BaseRaster,method="near")
+names(RainCV2)<-"RainCV"
+
+RainCV<-reactive({
+  terra::mask(terra::crop(RainCV2,Farming_System()),Farming_System())
+})
 
 ```
 
 ```{r Datasets - Plot RainCV, echo = F}
-renderPlot({terra::plot(RainCV,
+renderPlot({terra::plot(log(RainCV()),
+                        fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(LPS_Suitable)[[1]]),
+                        col=viridis(n=20,
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
                         axes = F,
                         frame.plot= F)
-            terra::plot(CGIAR_countries,add=T,border=input$BorderCol)
   },height=Plot.Height, width=Plot.Width)
 ```
 
-
-#### Stack
-```{r Datasets - Stack datasets,echo=T}
-# Raster stacked
-Stacked<-reactive({
-  c(LPS_Suitable,
-    LSvop(),
-    LSprod(),
-    MSvop(),
-    MSarea(),
-    MSprod(),
-    Hpop,
-    RainCV)
-})
-
-# Columns to sum
-SumCols<-reactive({
-  c(names(Stacked())[!names(Stacked()) %in% c("LPS_Suitable","CellSize","RainCV")],"CellSize.km")
-})
-
-# Columns to analyse
-prod_cols<-reactive({names(MSprod())})
-area_cols<-reactive({names(MSarea())})
-vop_cols<-reactive({names(MSvop())})
-vop_cols_LS<-reactive({names(LSvop())})
-```
-
 ### Analysis {.tabset .tabset-fade .tabset-pills}
-**Set analysis parameters**  
 
 :::: {style="display: flex;"}
 ::: {}
 
-*.*  
-*.*  
-*.*
-
-:::: {style="display: flex;"}
-::: {}
-```{r Parameter - Timeframe,echo=F}
-  numericInput(inputId="Years", 
-              label="Duration (years)",
-              value = 1,
-              min=1, 
-              max=50,
-              step = 1,
-              width="120px")
-```
-:::
-:::{}
-```{r Parameter - Cost Factor,echo=F}
-  numericInput(inputId="CostFactor", 
-              label="Cost factor",
-              value = 2.5,
-              min=0,              
-              max=10,
-              step = 0.1,
-              width="100px")
-```
-:::
-::::
-
-:::
-:::{}
-
-**Annual productivity increments (PIs)**  
+**Annual productivity increments**  
 *1-3 values can be entered.*  
 *Enter value as a percentage (%)*
 
@@ -838,7 +1089,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 ::: {}
 ```{r Parameter - Productivity Increment 1,echo=F}
   numericInput(inputId="PI_1", 
-              label="PI Value 1",
+              label="Value 1",
               value = 5,
               min=0,              
               max=100,
@@ -849,7 +1100,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 :::{}
 ```{r Parameter - Productivity Increment 2,echo=F}
   numericInput(inputId="PI_2", 
-              label="PI Value 2",
+              label="Value 2",
               value = 10,
               min=0,              
               max=100,
@@ -860,7 +1111,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 :::{}
 ```{r Parameter - Productivity Increment 3,echo=F}
   numericInput(inputId="PI_3", 
-              label="PI Value 3",
+              label="Value 3",
               value = NULL,
               min=0,              
               max=100,
@@ -873,7 +1124,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 :::
 :::{}
 
-**Annual adoption rates (AARs) in core areas**  
+**Annual adoption rates in core areas**  
 *1-3 values can be entered.*  
 *Enter value as a percentage (%   )*
 
@@ -881,7 +1132,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 ::: {}
 ```{r Parameter - Core Adoption Rate 1,echo=F}
   numericInput(inputId="CAAR_1", 
-              label="AAR Value 1",
+              label="Value 1",
               value = 1,
               min=0,              
               max=100,
@@ -892,7 +1143,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 :::{}
 ```{r Parameter - Core Adoption Rate 2,echo=F}
   numericInput(inputId="CAAR_2", 
-              label="AAR Value 2",
+              label="Value 2",
               value = 2,
               min=0,              
               max=100,
@@ -903,7 +1154,7 @@ vop_cols_LS<-reactive({names(LSvop())})
 :::{}
 ```{r Parameter - Core Adoption Rate 3,echo=F}
   numericInput(inputId="CAAR_3", 
-              label="AAR Value 3",
+              label="Value 3",
               value = 3,
               min=0,              
               max=100,
@@ -915,20 +1166,47 @@ vop_cols_LS<-reactive({names(LSvop())})
 
 :::
 :::{}
-
-**Spillover factor**  
-*The spillover of adoption from core to*  
-*spillover countries as a percentage (%)*  
+.  
+*The % of adoption in core countries*  
+*that spills to spillover countries* 
 ```{r Parameter - Spillover Factor,echo=F}
   numericInput(inputId="SpillFactor", 
-              label="Spillover",
+              label="Spillover Factor",
               value = 1,
               min=0,              
               max=100,
               step = 1,
-              width="100px")
+              width="260px")
 ```
 
+:::
+:::{}
+*The marginal benefits of adoption are divided*  
+*by the cost factor to account for increased*  
+*on-farm costs*
+```{r Parameter - Cost Factor,echo=F}
+  numericInput(inputId="CostFactor", 
+              label="Cost factor",
+              value = 2.5,
+              min=0,              
+              max=10,
+              step = 0.1,
+              width="300px")
+```
+:::
+:::{}
+*To estimate the value of CIS this value is*  
+*subtracted from the CV for each combination*  
+*of crop x country*
+```{r Parameter - CV reduction amount,echo=F}
+  numericInput(inputId="CV_Change", 
+              label="CV reduction",
+              value = 5,
+              min=0,              
+              max=100,
+              step = 1,
+              width="300px")
+```
 :::
 ::::
 
@@ -948,17 +1226,19 @@ Ad.Rates.Spillover<-reactive({
 
 :::: {style="display: flex;"}
 ::: {}
-```{r Parameter - CV reduction amount,echo=F}
-  numericInput(inputId="CV_Change", 
-              label="CV reduction",
-              value = 5,
-              min=0,              
-              max=100,
+*The project duration in years*
+```{r Parameter - Timeframe,echo=F}
+  numericInput(inputId="Years", 
+              label="Duration (years)",
+              value = 10,
+              min=1, 
+              max=50,
               step = 1,
-              width="100px")
+              width="250px")
 ```
 :::
 :::{}
+*Discount rate used for NPV calculations*
 ```{r Parameter - Discount Rate,echo=F}
   numericInput(inputId="DiscountRate1", 
               label="Discount rate (%)",
@@ -966,28 +1246,68 @@ Ad.Rates.Spillover<-reactive({
               min=0,              
               max=100,
               step = 1,
-              width="120px")
+              width="250px")
 
 DiscountRate<-reactive({input$DiscountRate1/100})
 ```
 :::
 :::{}
+*The cost of the project (million USD)*
 ```{r Parameter - Project Cost,echo=F}
   numericInput(inputId="ProjectCost1", 
-              label="Project cost (million USD)",
+              label="Project cost",
               value = 60,
               min=0,              
               max=10000,
               step = 5,
-              width="200px")
+              width="250px")
 
 ProjectCost<-reactive({input$ProjectCost1*10^6})
 ```
 :::
+:::{}
+*Unit of display for USD in tables*
+```{r Parameter - Annual increment - units,echo=F}
+selectInput(inputId="USD_Units", 
+            label="Divide USD by:",
+            choices = c(1,10,100,1000,10000,100000,1000000), 
+            selected = 1,
+            multiple = F,
+            width="250px")
+
+```
+:::
 ::::
 
-#### Prepare functions & names
-Create function to extract and summarize variables by LPS x Country:
+#### Data prep & analysis functions
+
+Stack datasets
+```{r Datasets - Stack datasets,echo=T}
+Stacked<-reactive({
+  c(Farming_System(),
+    LSvop(),
+    LSprod(),
+    MSvop(),
+    MSarea(),
+    MSprod(),
+    Hpop(),
+    RainCV())
+})
+
+# Columns to sum
+SumCols<-reactive({
+  c(names(Stacked())[!names(Stacked()) %in% c("Farming_System","CellSize","RainCV")],"CellSize.km")
+})
+
+# Columns to analyse
+prod_cols<-reactive({names(MSprod())})
+area_cols<-reactive({names(MSarea())})
+vop_cols<-reactive({names(MSvop())})
+vop_cols_LS<-reactive({names(LSvop())})
+
+```
+
+Create function to extract and summarize variables by Farming System x Country
 ```{r Extraction - Function to extract and summarize variables by LPS x Country,echo=T}
 StackExtractor1<-function(Data,ExtractBy,SumCols,prod_cols,area_cols,vop_cols){
 
@@ -1002,9 +1322,9 @@ StackExtractor1<-function(Data,ExtractBy,SumCols,prod_cols,area_cols,vop_cols){
   # Extract other variables by LPS
   Stats<-rbindlist(lapply(1:length(Stacked),FUN=function(i){
     X<-Stacked[[i]]
-    Stats<-terra::zonal(X[[SumCols]],X[["LPS_Suitable"]],fun=sum,na.rm=T)
+    Stats<-terra::zonal(X[[SumCols]],X[["Farming_System"]],fun=sum,na.rm=T)
     colnames(Stats)[colnames(Stats)=="CellSize.km"]<-"Area.km2"
-    Stats$RainCV.ln<-log(zonal(X[["RainCV"]],X[["LPS_Suitable"]],fun=mean,na.rm=T)$RainCV)
+    Stats$RainCV.ln<-log(zonal(X[["RainCV"]],X[["Farming_System"]],fun=mean,na.rm=T)$RainCV)
     Stats$Country<-names(Stacked)[i]
     Stats
     }))
@@ -1017,6 +1337,12 @@ colnames(prices)<-gsub("_vop","_price",colnames(prices))
 
 Stats<-cbind(Stats,yields,prices)
 
+ColOrder<-c(c("Country","Farming_System","Area.km2","Hpop","RainCV.ln"),
+    colnames(Stats)[!colnames(Stats) %in% c("Country","Farming_System","Area.km2","Hpop","RainCV.ln")]
+  )
+
+Stats<-Stats[,..ColOrder]
+
 return(Stats)
 }
 ```
@@ -1024,17 +1350,17 @@ return(Stats)
 Create function to calculate value of an annual increment in productivity:
 ```{r Analysis - Create AnnIncFun,echo=T}
 # Annual Increase 
-AnnIncFun<-function(Stats.Core,vop_cols,vop_cols_LS,Pr.Inc){
-  Cols<-c("LPS_Suitable","Country",vop_cols,vop_cols_LS)
+AnnIncFun<-function(Stats.Core,vop_cols,vop_cols_LS,Pr.Inc,AddFS){
+  Cols<-c("Farming_System","Country",vop_cols,vop_cols_LS)
   AnnualInc.Core<-Stats.Core[,..Cols]
   
-  AnnualInc.Core<-melt(AnnualInc.Core,id.vars = c("LPS_Suitable","Country"),variable.name = "Crop",value.name = "VOP")
+  AnnualInc.Core<-melt(AnnualInc.Core,id.vars = c("Farming_System","Country"),variable.name = "Crop",value.name = "VOP")
   
-  AnnualInc.Core<-AnnualInc.Core[,LPS_Code:=paste(substr(unlist(strsplit(LPS_Suitable[1] ," ")),1,1),collapse=""),by=LPS_Suitable]
-  
+  AnnualInc.Core[,LPS_Code:=paste(substr(unlist(strsplit(Farming_System[1] ," ")),1,1),collapse=""),by=Farming_System]
+ 
   AnnualInc.Core<-AnnualInc.Core[,list(LPS=paste(sort(unique(LPS_Code)),collapse=", "),VOP=sum(VOP,na.rm=T)),by=list(Country,Crop)
                  ][,Crop:=gsub("_vop","",Crop)
-                   ][,Country_LPS:=paste0(Country,"\n(",LPS,")")]
+                   ][,Country_LPS:=if(AddFS){paste0(Country,"\n(",LPS,")")}else{Country}]
   
   AnnualInc.Core<-dcast(AnnualInc.Core,Crop~Country_LPS,value.var = "VOP")
   AnnualInc.Core[,Total:=rowSums(AnnualInc.Core[,-1])]
@@ -1070,7 +1396,6 @@ MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,CostFactor){
                ][,Marginal_VOP:=VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor
                  ][,Total_VOP:=VOP_non+VOP_adopt
                    ]
-  
   return(Data)
 
 }
@@ -1083,12 +1408,12 @@ MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,System,CostFactor){
 
   ValCols<-paste0(rep(System,each=4),c("_vop","_yield","_price","_area"))
 
-  Cols<-c(ValCols,"LPS_Suitable","Country","Area.km2")
-  Stats2<-melt(Data[,..Cols],id.vars = c("Country","LPS_Suitable","Area.km2"),value.name = "StartVal",variable.name = "System")
+  Cols<-c(ValCols,"Farming_System","Country","Area.km2")
+  Stats2<-melt(Data[,..Cols],id.vars = c("Country","Farming_System","Area.km2"),value.name = "StartVal",variable.name = "System")
   Stats2[,Crop:=tstrsplit(System,"_",keep=1)
          ][,Variable:=tstrsplit(System,"_",keep=2)][,System:=NULL]
 
-  Stats2<-dcast(Stats2,Country+LPS_Suitable+Area.km2+Crop~Variable,value.var = "StartVal")
+  Stats2<-dcast(Stats2,Country+Farming_System+Area.km2+Crop~Variable,value.var = "StartVal")
 
   MI.args<-data.table(expand.grid(Ad.Rate=Ad.Rates,Pr.Inc=Pr.Inc))
 
@@ -1107,7 +1432,7 @@ MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,System,CostFactor){
                                   Price=price,
                                   VOP=vop,
                                   CostFactor=CostFactor),
-                     by=list(LPS_Suitable,Country,Crop,Area.km2,Ad.Rate,Pr.Inc)]
+                     by=list(Farming_System,Country,Crop,Area.km2,Ad.Rate,Pr.Inc)]
   return(Stats.Marg)
 }
 ```
@@ -1148,17 +1473,24 @@ return(AVLoss)
 Create wrapper function for avoided yield loss which recalculates marginal benefits:
 ```{r Analysis - Avoided Loss Wrapper, echo=T}
 AvLossWrapper<-function(CV_Data,Stats,CV_Change,CostFactor){
-  CV_Data[,CVfixed:=CV-CV_Change
-            ][,AvoidedLossFixed:=AvLoss(Mean=Mean,SD=SD,Change=CV_Change,Fixed=T),by=list(area,item)
-              ][,AvoidedLossProp:=AvLoss(Mean=Mean,SD=SD,Change=CV_Change,Fixed=F),by=list(area,item)]
+  CV_Data[,CVreduced:=CV-CV_Change
+            ][,AvoidedLossPerc:=AvLoss(Mean=Mean,SD=SD,Change=CV_Change,Fixed=T),by=list(area,item)]
   N<-match(
     Stats[,paste(Country,Crop)],
     CV_Data[,paste(area,SpamName)]
   )
   
-  Stats[,AvoidedLossFixed:=CV_Data[N,AvoidedLossFixed]
-          ][,Marginal_VOP_CIS:=(((100-AvoidedLossFixed)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor
-            ][,Marginal_VOP_Both:=Marginal_VOP_CIS+Marginal_VOP]
+  Stats[,AvoidedLossPerc:=CV_Data[N,AvoidedLossPerc]
+          ][,Marginal_VOP_CIS:=(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor
+            ][,Marginal_VOP_Both:=Marginal_VOP_CIS+Marginal_VOP
+              ]
+  
+  CV_Data[,element:=NULL
+          ][,unit:=NULL
+            ][,item:=NULL]
+  
+  setnames(CV_Data,c("area","SpamName","Mean","SD"),c("Country","Crop","Yield_Mean","Yield_SD"))
+  setcolorder(CV_Data,c("Country","Crop","N.Years","Yield_Mean","Yield_SD","CV","CVreduced","AvoidedLossPerc"))
   
   return(list(Stats=Stats,CV_Data=CV_Data))
 }
@@ -1203,9 +1535,11 @@ irr_wrapper<-function(NPV,InvestData,ProjectCost){
 }
 ```
 
-#### Extract Data
-**Core countries**
-```{r Extraction - Core countries,echo=T}
+#### Data extraction{.tabset .tabset-fade .tabset-pills}
+Each row in the extracted data tables represents a farming system within a country. Explanation of table headings: **`Area.km2`** = area (km2); **`Hpop`** = human population; **`RainCV.ln`** = natural log of mean rainfall CV; suffix **`vop`** = commodity value of production (international USD); suffix **`area`** = commodity area of production (km2); suffix **`yield`** = commodity yield (ton/ha); suffix **price** = 2005 commodity price (international USD/ton).
+
+##### Core countries{.tabset .tabset-fade .tabset-pills}
+```{r Extraction - Core countries,echo=F}
 Stats.Core<-reactive({
   StackExtractor1(Data=Stacked(), 
                   ExtractBy = ExtractBy.Core(), 
@@ -1215,9 +1549,37 @@ Stats.Core<-reactive({
                   vop_cols=vop_cols())
 })
 
+AreaCalc<-function(Stats,CountryAreas){
+  
+    Data<-Stats[,ToTArea:=CountryAreas[match(Stats$Country,ADMIN),area]
+                 ][,Area:=round(100*Area.km2/ToTArea,1)
+                   ][,list(Country,Farming_System,Area)]
+    
+    
+    ToTArea<-CountryAreas[ADMIN %in% Stats$Country,sum(area)]
+    
+    Data2<-Stats[,list(Area.km2=sum(Area.km2,na.rm=T)),by=Farming_System
+                        ][,Area:=round(100*Area.km2/ToTArea,1)
+                          ][,Country:="Total"
+                            ][,list(Country,Farming_System,Area)]
+    
+    Data<-rbind(Data,Data2)
+    
+    Data<-dcast(data=Data,formula=Country~Farming_System, value.var = "Area")
+    
+    Data$Total<-rowSums(Data[,!"Country"],na.rm=T)
+    N<-Data$Country=="Total"
+    Data<-rbind(Data[!N],Data[N])
+    return(Data)
+}
+
+CoreAreas<-reactive({
+  AreaCalc(Stats=Stats.Core(),CountryAreas=CountryAreas)
+})
 
 ```
 
+###### Extraction
 ```{r Extraction - Core countries DT, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(Stats.Core(),is.numeric,~round(.,3)),
@@ -1230,8 +1592,22 @@ Stats.Core<-reactive({
   })
 ```
 
-**Spillover countries**
-```{r Extraction - Spillover countries,echo=T}
+###### Farming System Areas
+```{r Extraction - Core countries FS Area DT, echo=F}
+  renderDT({
+    datatable(CoreAreas(),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+##### Spillover countries{.tabset .tabset-fade .tabset-pills}
+###### Extraction
+```{r Extraction - Spillover countries,echo=F}
 Stats.Spillover<-reactive({
   StackExtractor1(Data=Stacked(), 
                   ExtractBy = ExtractBy.Spillover(), 
@@ -1241,6 +1617,9 @@ Stats.Spillover<-reactive({
                   vop_cols=vop_cols())
 })
 
+CoreAreasSpill<-reactive({
+  AreaCalc(Stats=Stats.Spillover(),CountryAreas=CountryAreas)
+})
 
 ```
 
@@ -1256,12 +1635,22 @@ Stats.Spillover<-reactive({
   })
 ```
 
+###### Farming System Areas
+```{r Extraction - Spillover countries FS Area DT, echo=F}
+  renderDT({
+    datatable(CoreAreasSpill(),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
 
-#### Productivity increment value
+#### Productivity increment value{.tabset .tabset-fade .tabset-pills}
 The estimated direct benefits of adoption of CSA practices in the selected core countries, expressed as the increase in value (USD) of production per year per the specified percentage productivity increment in crop, meat or milk yields – that is, assuming adoption over all the crop area and all cattle in the target systems of a technology that increased production per ha or per animal by the specified percentages.
 
-:::: {style="display: flex;"}
-::: {}
 ```{r Parameter - Annual increment,echo=F}
   numericInput(inputId="AI_PrInc1", 
               label="Productivity increment (%)",
@@ -1273,33 +1662,24 @@ The estimated direct benefits of adoption of CSA practices in the selected core 
 
 AI_PrInc<-reactive({input$AI_PrInc1/100})
 ```
-:::
-:::{}
-```{r Parameter - Annual increment - units,echo=F}
-selectInput(inputId="AI_Units", 
-            label="Divide USD by:",
-            choices = c(1,10,100,1000,10000,100000,1000000), 
-            selected = 1,
-            multiple = F,
-            width="150px")
 
-```
-:::
-::::
 
-```{r Analysis - Annual Increment,echo=T}
+##### Core
+This table shows the estimated direct benefits of adoption of CSA practices in the selected core countries, expressed as the increase in value of production per year per `r reactive({input$AI_PrInc1})` % increase in crop and/or livestock yields – that is, assuming adoption over all the crop area and cattle in the target systems of a technology that increased production per ha or per animal per `r reactive({input$AI_PrInc1})` % productivity increment. Units are `r reactive({if(input$USD_Units==1){""}else{input$USD_Units}})` international USD.
+```{r Analysis - Annual increment core,echo=F}
 AnnInc<-reactive({
   AnnIncFun(Stats.Core=Stats.Core(),
                   vop_cols=vop_cols(),
                   vop_cols_LS=vop_cols_LS(),
-                  Pr.Inc=AI_PrInc())
+                  Pr.Inc=AI_PrInc(),
+                  AddFS=F)
 })
 
 ```
 
-```{r Analysis - Annual Increment DT,echo=F}
+```{r Analysis - Annual increment core DT,echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(AnnInc(),is.numeric,~round(./as.numeric(input$AI_Units),1)),
+    datatable(dplyr::mutate_if(AnnInc(),is.numeric,~round(./as.numeric(input$USD_Units),1)),
                 extensions = 'Buttons',
                 filter = "top",
                 options = list(dom = 'Blfrtip',
@@ -1308,9 +1688,41 @@ AnnInc<-reactive({
   })
 ```
 
-#### Marginal increase in value
-**Core countries**
-```{r Analysis - MI Core, echo=T}
+##### Spillover
+This table shows the estimated spillover benefits of adoption of CSA practices in the selected “extrapolation domain” countries, expressed as per the "core" table above in terms of the increase in value of production per year per `r reactive({input$AI_PrInc1})` %  increase in crop and/or livestock (i.e., assuming adoption over all the cropping areas and all cattle in the target systems) and a spillover factor of `r reactive({input$SpillFactor})`%. Units are `r reactive({if(input$USD_Units==1){""}else{input$USD_Units}})` international USD.
+
+```{r Analysis - Annual increment spillover,echo=F}
+AnnIncSpill<-reactive({
+  AnnIncFun(Stats.Core=Stats.Spillover(),
+                  vop_cols=vop_cols(),
+                  vop_cols_LS=vop_cols_LS(),
+                  Pr.Inc=AI_PrInc()*input$SpillFactor/100,
+                  AddFS=F)
+})
+
+```
+
+```{r Analysis - Annual increment spillover DT,echo=F}
+  renderDT({
+    datatable(dplyr::mutate_if(AnnIncSpill(),is.numeric,~round(./as.numeric(input$USD_Units),1)),
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+#### Marginal increase in value{.tabset .tabset-fade .tabset-pills}
+Each row in the table represents a commodity x farming system x country combination for different values of annual adoption rate and productivity increment.  
+Explanation of table headings: **`Area.km2`** = area (km2); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **`Year`** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD), **`Marginal_VOP`** = marginal value of adoption (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`,**`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`.  
+For more information on how `Total_Adoption` is calculated see the `MarginalInc` function found in the **Analysis::Data prep & analysis functions** tab.
+
+##### Core countries{.tabset .tabset-fade .tabset-pills}
+Here we modify the benefits from the previous tab for a range of adoption rates `r reactive({paste0("(",paste(100*Ad.Rates.Core(),collapse=", "),"%)")})` and productivity increments `r reactive({paste0("(",paste(100*Pr.Inc(),collapse=", "),"%)")})` at scale. Calculations are shown in the annex. The productivity increments used here should be within what has been observed in many situations for the technology being assessed. Regarding adoption rates, there are not many examples of agricultural technology adoption rates at scale in excess of 2% per year (see Thornton and Herrero, 2010, for example). The annual adoption rates used here refer to the total area of crop and/or number of cattle that have not yet adopted over a `r reactive({input$Years})` year period. So, for example, 2% adoption in year 8 is not the same number as 2% adoption in year 2. For this reason, the estimates of VOP addition are not simple linear multiples of the adoption rate per year shown.
+
+###### All Data
+```{r Analysis - MI Core, echo=F}
 MI.Core<-reactive({
   MIwrapper(Data=Stats.Core(),
           Ad.Rates=Ad.Rates.Core(),
@@ -1334,8 +1746,37 @@ MI.Core<-reactive({
   })
 ```
 
-**Spillover countries**
-```{r Analysis - MI Spillover, echo = T}
+###### Summary
+```{r Analysis - MI Core DT No Countries, echo=F}
+
+MI.Core.Total<-reactive({
+  MI.Core()[Year==max(Year),list(Area.km2=sum(Area.km2,na.rm=T),
+                  A_non_adopt=sum(A_non_adopt,na.rm=T),
+                  A_adopt=sum(A_adopt,na.rm=T),
+                  VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                  VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                  Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
+                  Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units)),by=list(Crop,Ad.Rate,Pr.Inc)]
+            
+})
+
+
+  renderDT({
+    datatable(dplyr::mutate_if(MI.Core.Total(),is.numeric,~round(.,3)),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+##### Spillover countries{.tabset .tabset-fade .tabset-pills}
+This table shows the marginal benefits for value of production in the "extrapolation domain" countries. These spillover marginal benefits are estimated using a much lower adoption rate than the core countries (`r reactive({input$SpillFactor})` % of core adoption rates) , but use the same productivity increments.
+
+###### All Data
+```{r Analysis - MI Spillover, echo = F}
 MI.Spillover<-reactive({
   MIwrapper(Data=Stats.Spillover(),
                          Ad.Rates=Ad.Rates.Spillover(),
@@ -1358,9 +1799,44 @@ MI.Spillover<-reactive({
   })
 ```
 
-#### Avoided losses from reduction in CV
-*Note that this analysis is for crops only*
-```{r Analysis - CV Subset data to crops,echo=T}
+###### Summary
+```{r Analysis - MI Spillover DT No Countries, echo=F}
+
+MI.Spill.Total<-reactive({
+  Stats.Spillover()[Year==max(Year),list(Area.km2=sum(Area.km2,na.rm=T),
+                  A_non_adopt=sum(A_non_adopt,na.rm=T),
+                  A_adopt=sum(A_adopt,na.rm=T),
+                  VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                  VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                  Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
+                  Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units)),by=list(Crop,Ad.Rate,Pr.Inc)]
+            
+})
+
+
+  renderDT({
+    datatable(dplyr::mutate_if(MI.Spill.Total(),is.numeric,~round(.,3)),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+#### Avoided losses from reduction in CV{.tabset .tabset-fade .tabset-pills}
+The benefits for farmers who use climate information services (CSI) arise from their being able to adjust their management practices to likely imminent or future weather patterns. If the growing season is likely to be wetter than average, then it may be appropriate to increase the use of purchased inputs to increase production and net revenues, for example. For drier conditions, CIS can help farmers and herders reduce production losses via a range of management decisions (such as sale of animals or reducing cropping inputs). The long-term implications of a drought on vulnerable households may be profound, because such a “system shock” can push farmers and their families into poverty from which it can be difficult to escape (Barrett et al., 2016).  
+
+The use of CIS will not only reduce production variability, it should also increase average yields. This latter effect is not included in the CIS analysis done here as it would double-count the benefits already estimated from non-CIS technology adoption. An assumption of this economic and financial analysis is that non-CSI technology adoption leads to production benefits (increases in distribution means) and that CSI leads to reductions in yield losses in poorer seasons (reductions in production standard deviations). Thus the target populations for non-CIS and CIS technologies should essentially be the same if their benefits are to be considered together.
+
+Annual national yield variability was calculated from FAOSTAT for each of the core countries selected for the maximum amount of time series data available. Yield CVs for the target and extrapolation countries are oresented in the `Datasets::FAO` tab.
+
+Because CIS are still relatively new in SSA, information on the potential for the use of CIS to reduce yield variability is still scarce. To the extent that use of CIS prompts changes in technology choice, the impacts can be significant for example Wossen et al. (2017) reported that yield variance in farmers’ fields can be halved via the use of drought-tolerant maize.
+
+One way to translate reduced yield variability into production benefits is to calculate the economic losses avoided (in terms of value of production) for a percentage reduction in yield CV, measured with respect to the left-hand tail of the production distribution function (PDF). A very approximate estimate is to assume that maize yields in farmers’ fields are distributed normally and calculate the difference in the probability densities of two normal yield density curves, one with the observed mean and yield CV and another with the same mean but a reduced yield CV. For example, if the average yield of maize is 1.24 t/ha, and the yield CV is about 35% the yield standard deviation is 0.43 t/ha. If the CV is reduced to 30% with the same mean, the new standard deviation is 0.37 t/ha. The area between the PDFs of these two normal distributions in the left-hand tails (i.e., the total of the yield loss foregone because of the reduction in CV from 35% to 30%), amounts to 3.3% of total production. Values of the loss avoided are shown in the table below for the same adoption rates used in the previous sections. In practice, mean yields will increase through the use of CIS, but as explained above the focus here is on the avoided losses, which may be extremely important for household food security.
+
+```{r Analysis - CV Subset data to crops,echo=F}
 CV_Subset_Core<-reactive({
   FAO_CV[area %in% input$CountriesChoice & SpamName %in% input$CropChoice]
 })
@@ -1371,8 +1847,8 @@ CV_Subset_Spill<-reactive({
 
 ```
 
-**Core avoided losses**
-```{r Analysis - Core avoided losses,echo=T}
+##### Core{.tabset .tabset-fade .tabset-pills}
+```{r Analysis - Core avoided losses,echo=F}
 CoreCV<-reactive({
   AvLossWrapper(CV_Data=CV_Subset_Core(),
                 Stats=MI.Core(),
@@ -1382,6 +1858,8 @@ CoreCV<-reactive({
 
 ```
 
+###### CV table
+This table is derived from the FAOSTAT data presented in the **Datasets::FAO** tab. Each row in the extracted data tables represents a crop within a country. Explanation of table headings: **`N.Years`** = number of years of FAO national yield data available; **`Yield_Mean`** = mean FAO crop yield (t/ha); **`Yield_SD`** = standard deviation of crop yield;  **`CV`** = coefficient of variation for crop yield as `100*(Yield_SD/Yield_Mean)`;  **`CVreduced`** = value of CV following reduction in variability due to use of CIS; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%). For more information on how `AvoidedLossPerc` is calculated see the `AvLoss` function found in the **Analysis::Data prep & analysis functions** tab.
 ```{r Analysis -  Core avoided losses DT CV_Data, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(CoreCV()$CV_Data,is.numeric,~round(.,3)),
@@ -1394,9 +1872,13 @@ CoreCV<-reactive({
   })
 ```
 
+###### Marginal VoP inc. Non-CIS + CIS
+Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
+Explanation of table headings: **`Area.km2`** = area (km2); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
+
 ```{r Analysis -  Core avoided losses DT Stats, echo=F}
-  renderDT({
-    datatable(dplyr::mutate_if(CoreCV()$Stats,is.numeric,~round(.,3)),
+renderDT({
+    datatable(dplyr::mutate_if(CoreCV()$Stats[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1406,8 +1888,37 @@ CoreCV<-reactive({
   })
 ```
 
-**Spillover avoided losses**
-```{r Analysis - Spillover avoided losses,echo=T}
+###### Summary
+```{r Analysis - Core avoided losses DT Summary, echo=F}
+CoreCVSummary<-reactive({
+  CoreCV()$Stats[Year==max(Year),
+                 list(Area.km2=sum(Area.km2,na.rm=T),
+                    A_non_adopt=sum(A_non_adopt,na.rm=T),
+                    A_adopt=sum(A_adopt,na.rm=T),
+                    VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                    VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                    Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
+                    Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units),
+                    Marginal_VOP_CIS=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
+                    Marginal_VOP_Both=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units)),
+                 by=list(Crop,Ad.Rate,Pr.Inc)
+                 ][,Ad.Rate:=as.character(Ad.Rate)]
+            
+})
+
+renderDT({
+  datatable(dplyr::mutate_if(CoreCVSummary(),is.numeric,~round(.,3)),
+              caption="",
+              extensions = 'Buttons',
+              filter = "top",
+              options = list(dom = 'Blfrtip',
+                             buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                             lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+})
+```
+
+##### Spillover{.tabset .tabset-fade .tabset-pills}
+```{r Analysis - Spillover avoided losses,echo=F}
 SpilloverCV<-reactive({
   AvLossWrapper(CV_Data=CV_Subset_Spill(),
                 Stats=MI.Spillover(),
@@ -1417,6 +1928,8 @@ SpilloverCV<-reactive({
 
 ```
 
+###### CV table
+This table is derived from the FAO data presented in the **Datasets::FAO** tab. Each row in the extracted data tables represents a crop within a country. Explanation of table headings: **`N.Years`** = number of years of FAO national yield data available; **`Yield_Mean`** = mean FAO crop yield (t/ha); **`Yield_SD`** = standard deviation of crop yield;  **`CV`** = coefficient of variation for crop yield as `100*(Yield_SD/Yield_Mean)`;  **`CVreduced`** = value of CV following reduction in variability due to use of CIS; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%). For more information on how `AvoidedLossPerc` is calculated see the `AvLoss` function found in the **Analysis::Data prep & analysis functions** tab.
 ```{r Analysis -  Spillover avoided losses DT CV_Data, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(SpilloverCV()$CV_Data,is.numeric,~round(.,3)),
@@ -1429,10 +1942,97 @@ SpilloverCV<-reactive({
   })
 ```
 
+###### Marginal VoP inc. Non-CIS + CIS
+Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
+Explanation of table headings: **`Area.km2`** = area (km2); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
 ```{r Analysis -  Spillover avoided losses DT Stats, echo=F}
+renderDT({
+  datatable(dplyr::mutate_if(SpilloverCV()$Stats[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
+              caption="Select crops",
+              extensions = 'Buttons',
+              filter = "top",
+              options = list(dom = 'Blfrtip',
+                             buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                             lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+})
+```
+
+###### Summary
+```{r Analysis - Spillover avoided losses DT Summary, echo=F}
+SpillCVSummary<-reactive({
+  SpilloverCV()$Stats[Year==max(Year),
+                      list(Area.km2=sum(Area.km2,na.rm=T),
+                        A_non_adopt=sum(A_non_adopt,na.rm=T),
+                        A_adopt=sum(A_adopt,na.rm=T),
+                        VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                        VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                        Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
+                        Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units),
+                        Marginal_VOP_CIS=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
+                        Marginal_VOP_Both=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units)), 
+                      by=list(Crop,Ad.Rate,Pr.Inc)
+                  ][,Ad.Rate:=as.character(Ad.Rate)]
+            
+})
+
+renderDT({
+  datatable(dplyr::mutate_if(SpillCVSummary(),is.numeric,~round(.,3)),
+              caption="",
+              extensions = 'Buttons',
+              filter = "top",
+              options = list(dom = 'Blfrtip',
+                             buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                             lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+})
+```
+
+#### Investment indicators  {.tabset .tabset-fade .tabset-pills}
+The information presented in the previous tabs illustrates estimated changes in the value of production of different commodities for different production increments and adoption rates. To estimate returns on investment, some estimate is needed of the direct costs of implementing non-CIS and CIS technologies at the farm level, so that cash flows can be calculated on changes in net profits or grow margins per ha or per animal.
+
+The tabs below show the Net Present Value (NPV), Internal Rate of Return (IRR) and Benefit-Cost Ratio (BCR) for the selected ranges of adoption rates and yield increments, with the assumptions that the investment is allocated to the indicator crop (ADD CROP), and that the marginal VOP additions each year from non-CIS and CIS adoption are adjusted by a factor of `r reactive({input$CostFactor})` to account for the increased costs of implementation at the farm level (as above) plus the essentially unknown off-farm costs (increased market access, improved seed production, etc).
+
+**Choose Crops**
+```{r Analysis - Choose crops}
+renderUI({
+checkboxGroupInput(inputId="InvestStatCrops", 
+         label= NULL, 
+         choices = input$CropChoice, 
+         selected = c("maize"),
+         inline = T)
+})
+```
+
+##### NPV Calculations {.tabset .tabset-fade .tabset-pills}
+
+Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
+
+Explanation of table headings: **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Year`** = project year; **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`NPVtype`**  indicates if NPV and VOP is calculated for both CIS and non-CIS technology adoption (`NPVboth`) or non-CIS technologies only (`NPVnoncis`);  **`NPV`** net-present value (international USD) as `VOP    /(1+DiscountRate)^Year`; **`VOP`** = marginal value of adoption (international USD) as calculated in previous tabs. The discount rate used in calculations is `r reactive({100*DiscountRate()})`%.
+
+###### Core only
+*Investment indicators calculated only considering core countries*
+```{r Analysis - NPV Calc 1 Core,echo=F}
+InvestData1<-reactive({
+  CoreCV()$Stats[Crop %in% input$InvestStatCrops, list(Farming_System,Country,Crop,Ad.Rate, Pr.Inc, Marginal_VOP_Both, Marginal_VOP, Year, Total_Adoption, AvoidedLossPerc)
+                    ][,NPVboth:=Marginal_VOP_Both/(1+DiscountRate())^Year
+                      ][,NPVnoncis:=Marginal_VOP/(1+DiscountRate())^Year]
+})
+
+InvestData<-reactive({
+  melt(InvestData1(),
+     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_Adoption", "AvoidedLossPerc", "Marginal_VOP_Both", "Marginal_VOP"),
+     variable.name = "NPVtype",
+     value.name = "NPV")[,VOP:=Marginal_VOP
+                         ][,Marginal_VOP:=NULL
+                           ][NPVtype=="NPVboth",VOP:=Marginal_VOP_Both
+                             ][,Marginal_VOP_Both:=NULL]
+})
+```
+
+```{r Analysis - NPV Calc 1 DT Core, echo=F}
 
   renderDT({
-    datatable(dplyr::mutate_if(SpilloverCV()$Stats,is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(InvestData()[,NPV:=NPV/as.numeric(input$USD_Units)
+                                               ][,VOP:=VOP/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1442,21 +2042,45 @@ SpilloverCV<-reactive({
   })
 ```
 
-#### Investment indicators  {.tabset .tabset-fade .tabset-pills}
-##### Net Present Value (NPV) & Benefit-cost Ratio (BCR)
-**Core**
-```{r Analysis - NPV Calc 1,echo=T}
-InvestStatCrops<-"maize"
+```{r Analysis - NPV Calc 2 Core,echo=F}
 
-InvestData1<-reactive({
-  CoreCV()$Stats[Crop %in% InvestStatCrops, list(LPS_Suitable,Country,Crop,Ad.Rate, Pr.Inc, Marginal_VOP_Both, Marginal_VOP, Year, Total_Adoption, AvoidedLossFixed)
-                    ][,NPVboth:=Marginal_VOP_Both/(1+DiscountRate())^Year
-                      ][,NPVcsa:=Marginal_VOP/(1+DiscountRate())^Year]
+NPV<-reactive({
+  InvestData()[,list(Avoided_loss_mean=-mean(AvoidedLossPerc,na.rm=T)/100,
+                      Value=sum(NPV,na.rm=T),
+                      Years=max(Year),
+                      Implied_Adoption=max(Total_Adoption)
+                      ),by=list(Ad.Rate,Pr.Inc,NPVtype)
+             ][,NPV:=Value-ProjectCost()
+               ][,BCR:=NPV/ProjectCost()
+                 ][,Value:=NULL]
 })
 
-InvestData<-reactive({
-  melt(InvestData1(),
-     id.vars = c("LPS_Suitable","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_Adoption", "AvoidedLossFixed", "Marginal_VOP_Both", "Marginal_VOP"),
+```
+
+```{r Analysis - NPV Calc 2 DT Core, echo=F,eval=F}
+  renderDT({
+    datatable(dplyr::mutate_if(NPV()[,!c("Avoided_loss_mean","Years")],is.numeric,~round(.,3)),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+###### Core + Spillover
+*Investment indicators calculated considering both core and spillover countries*
+```{r Analysis - NPV Calc 1,echo=F}
+InvestData1_CS<-reactive({
+  rbind(CoreCV()$Stats,SpilloverCV()$Stats)[Crop %in% input$InvestStatCrops, list(Farming_System,Country,Crop,Ad.Rate, Pr.Inc, Marginal_VOP_Both, Marginal_VOP, Year, Total_Adoption, AvoidedLossPerc)
+                    ][,NPVboth:=Marginal_VOP_Both/(1+DiscountRate())^Year
+                      ][,NPVnoncis:=Marginal_VOP/(1+DiscountRate())^Year]
+})
+
+InvestData_CS<-reactive({
+  melt(InvestData1_CS(),
+     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_Adoption", "AvoidedLossPerc", "Marginal_VOP_Both", "Marginal_VOP"),
      variable.name = "NPVtype",
      value.name = "NPV")[,VOP:=Marginal_VOP
                          ][,Marginal_VOP:=NULL
@@ -1468,7 +2092,8 @@ InvestData<-reactive({
 ```{r Analysis - NPV Calc 1 DT, echo=F}
 
   renderDT({
-    datatable(dplyr::mutate_if(InvestData(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(InvestData_CS()[,NPV:=NPV/as.numeric(input$USD_Units)
+                                               ][,VOP:=VOP/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1478,13 +2103,13 @@ InvestData<-reactive({
   })
 ```
 
-```{r Analysis - NPV Calc 2,echo=T}
+```{r Analysis - NPV Calc 2,echo=F}
 
-NPV<-reactive({
-  InvestData()[,list(Avoided_loss_mean=-mean(AvoidedLossFixed,na.rm=T)/100,
+NPV_CS<-reactive({
+  InvestData_CS()[,list(Avoided_loss_mean=mean(AvoidedLossPerc,na.rm=T),
                       Value=sum(NPV,na.rm=T),
-                      Years=length(unique(Year)),
-                      Implied_Adoption=max(Total_Adoption)
+                      Years=max(Year),
+                      Implied_Adoption=100*max(Total_Adoption)
                       ),by=list(Ad.Rate,Pr.Inc,NPVtype)
              ][,NPV:=Value-ProjectCost()
                ][,BCR:=NPV/ProjectCost()
@@ -1493,20 +2118,15 @@ NPV<-reactive({
 
 ```
 
-```{r Analysis - NPV Calc 2 DT, echo=F}
-  renderDT({
-    datatable(dplyr::mutate_if(NPV(),is.numeric,~round(.,3)),
-                caption="",
-                extensions = 'Buttons',
-                filter = "top",
-                options = list(dom = 'Blfrtip',
-                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
-  })
-```
 
-##### Internal Rate of Return (IRR) 
-```{r Analysis - IRR Calc,echo=T}
+##### Indicators {.tabset .tabset-fade .tabset-pills}
+Each row in the table presents NPV, BCR and IRR investment indicators for each combination of annual adoption rate and productivity increment. Explanation of table headings: **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`NPVtype`**  indicates if NPV and VOP is calculated for both CIS and non-CIS technology adoption (`NPVboth`) or non-CIS technologies only (`NPVnoncis`);**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (%), the mean is calculated across all farming system x crop x country combinations; **`Years`** = Project duration; **`Implied Adoption`** = total assumed adoption of technologies in core countries; **`NPV`** net-present value (international USD); **`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; **`IRR`** = internal rate of return (see the `irr` function in **Analysis::Data prep & analysis functions** tab for methodological details).
+
+The discount rate used in NPV calculations is `r reactive({100*DiscountRate()})`% and the project cost is `r reactive({ProjectCost()/10^6})` million USD.
+
+###### Core only
+*Investment indicators calculated only considering core countries*
+```{r Analysis - IRR Calc Core,echo=T}
 
 InvestStats_IRR<-reactive({
   irr_wrapper(NPV=NPV(),
@@ -1515,9 +2135,9 @@ InvestStats_IRR<-reactive({
 })
 ```
 
-```{r Analysis - IRR Calc DT, echo=F}
+```{r Analysis - IRR Calc DT Core, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(InvestStats_IRR(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(InvestStats_IRR()[,NPV:=NPV/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1526,4 +2146,61 @@ InvestStats_IRR<-reactive({
                                lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
   })
 ```
+
+###### Core + Spillover
+*Investment indicators calculated considering both core and spillover countries. Note that implied adoption only consider adoption in core countries, in spillover countries adoption is assumed to be `r reactive({input$SpillFactor})``% of that in core countries.*
+```{r Analysis - IRR Calc Spillover,echo=T}
+
+InvestStats_IRRspill<-reactive({
+  irr_wrapper(NPV=NPV(),
+              InvestData=InvestData_CS(),
+              ProjectCost=ProjectCost())
+})
+```
+
+```{r Analysis - IRR Calc DT Spillover, echo=F}
+  renderDT({
+    datatable(dplyr::mutate_if(InvestStats_IRRspill()[,NPV:=NPV/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+### Annex
+**Calculations**
+
+From the gridded data, we have:  
+
+* VOP, value of production ($ per year)    
+*	A, area planted, or numbers of cattle (ha or head)   
+*	P, production (t)  
+*	R, price ($/t), given by VOP / P  
+  
+Assume adoption rate a (% per year)  
+Assume a productivity increment y (%, flat rate one-off)  
+  
+Y = P/A in t/ha or kg/head  
+NB we used derived yields rather than spatial values because of spatial data alignment issues.  
+  
+For adopters over 10 years,   
+Y’ = Y * (1+y/100)		increased yield  
+A’ = A * (1 + a/100)^10 – A	increasing area under adoption, a% per year  
+VOP’ = Y’ * A’ * R		VOP from adopters  
+   
+For non-adopters,  
+Y’’ = Y				same yield  
+A’’ = A – A’ 			decreasing share of the area as adoption increases through time  
+VOP’’ = Y * A’’ * R		VOP from non-adopters  
+  
+VOP tot = VOP’ + VOP’’		At year 10, total VOP from adopters and non-adopters  
+  
+Thus the marginal benefits of adoption per year at year 10 is:  
+VOP delta = VOP tot – VOP  
+  
+After some algebra,  
+VOP delta = VOP * (1 - (((1+a/100)^10 ) - 1)) + VOP * (1+y/100) * (((1+a0/100)^10) - 1) – VOP  
 
