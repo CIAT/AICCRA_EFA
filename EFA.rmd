@@ -2127,7 +2127,7 @@ The discount rate used in NPV calculations is `r reactive({100*DiscountRate()})`
 
 ###### Core only
 *Investment indicators calculated only considering core countries*
-```{r Analysis - IRR Calc Core,echo=T}
+```{r Analysis - IRR Calc Core,echo=F}
 
 InvestStats_IRR<-reactive({
   irr_wrapper(NPV=NPV(),
@@ -2153,7 +2153,7 @@ InvestStats_IRR<-reactive({
 
 ###### Core + Spillover
 *Investment indicators calculated considering both core and spillover countries. Note that implied adoption only consider adoption in core countries, in spillover countries adoption is assumed to be `r reactive({input$SpillFactor})``% of that in core countries.*
-```{r Analysis - IRR Calc Spillover,echo=T}
+```{r Analysis - IRR Calc Spillover,echo=F}
 
 InvestStats_IRRspill<-reactive({
   irr_wrapper(NPV=NPV(),
@@ -2167,7 +2167,7 @@ InvestStats_IRRspill<-reactive({
     datatable(data.table::copy(InvestStats_IRRspill())[,NPV:=NPV/as.numeric(input$USD_Units)
                                                   ][,BCR:=round(BCR,3)
                                                     ][,IRR=round(IRR,3)
-                                                      ][,Implied_Adoption=round(Implied_Adoption,3)],
+                                                      ][,Implied_Adoption:=round(Implied_Adoption,3)],
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
