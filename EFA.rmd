@@ -395,11 +395,12 @@ checkboxGroupInput(inputId="LSChoice",
 ```{r Datasets - Crop base raster,echo=F}
 BaseRaster<-terra::crop(BaseRaster,CGIAR_countries)
 CellSize.km<-terra::cellSize(BaseRaster,mask=T, unit="km")
+CellSize.ha<-terra::cellSize(BaseRaster,mask=T, unit="ha")
 
 CountryRast<-terra::rasterize(CGIAR_countries,BaseRaster,"ADMIN")
 CountryAreas<-data.table(
   terra::zonal(
-    x=terra::cellSize(CountryRast,mask=T,"km"),
+    x=terra::cellSize(CountryRast,mask=T,"ha"),
     z=CountryRast,
     sum))
 
@@ -503,7 +504,7 @@ Phil Thorton confirms that livestock VoP (as for crops) was calculated as produc
 
 ###### Value of production (VoP) 
 ```{r Datasets - Load LSvop,echo=F}
-# *CellSize.km to convert to USD/km2/year to USD/km/pixel
+# *CellSize.km to convert from USD/km2/year to USD/pixel/year
 
 LSvop1<-reactive({
   terra::mask(terra::crop(
@@ -535,9 +536,9 @@ LSvop<-reactive({
 
 ```
 
-**Value of livestock production  ln(USD)/pixel**
+**Value of livestock production  ln(USD/pixel)**
 ```{r Datasets - Plot LSvop, echo =F}
-renderPlot({terra::plot(log(LSvop1()),
+renderPlot({terra::plot(log(LSvop()),
                         fun=AddBorders(),
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
@@ -548,20 +549,23 @@ renderPlot({terra::plot(log(LSvop1()),
                         axes = F,
                         frame.plot= F)
   },height=Plot.Height, width=Plot.Width)
+
 ```
 
 ###### Yield & Production
+*Yield units are converted from kg/km2/year to t/km2/year*
 ```{r Datasets - Load LSyield,echo=F}
+# Divide by 1000 to convert kg to t
 LSyield<-reactive({
   terra::mask(terra::crop(
-    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename])) 
+    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))/1000 
   ,Farming_System()),Farming_System())
 })
 
-# *CellSize.km converts yield to production per pixel
+# *CellSize.km converts yield t/km2/year to production per pixel t/pixel/year
 LSprod2<-reactive({
   terra::mask(terra::crop(
-    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))*CellSize.km 
+    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))*CellSize.km/1000
   ,Farming_System()),Farming_System())
 })
 
@@ -572,7 +576,7 @@ LSprod<-reactive({
 
 ```
 
-**Livestock production ln(kg)/pixel**
+**Livestock production ln(t/pixel)**
 ```{r Datasets - Plot LSprod, echo =F}
 renderPlot({terra::plot(log(LSprod()),
                         fun=AddBorders(),
@@ -588,7 +592,7 @@ renderPlot({terra::plot(log(LSprod()),
   },height=Plot.Height, width=Plot.Width)
 ```
 
-**Livestock yield ln(kg)/km2**
+**Livestock yield ln(t/ha)**
 ```{r Datasets - Plot LSyield, echo =F}
 renderPlot({terra::plot(log(LSyield()),
                         fun=AddBorders(),
@@ -606,32 +610,35 @@ renderPlot({terra::plot(log(LSyield()),
 ###### LS Area
 *Note that we do not have a layer for this data so cellsize is currently substituted.*
 ```{r Datasets - Load LSarea,echo=F}
-LSareaFun<-function(CellSize.km,LSChoice,Mask){
-  X<-CellSize.km
-  X<-terra::mask(terra::crop(X,Mask),Mask)
-  if(length(LSChoice)>1){
-  for(i in 1:length(LSChoice)){
-      X<-c(X,CellSize.km)
+LSareaFun<-function(Data){
+ 
+  if(terra::nlyr(Data)>1){
+    for(i in 1:terra::nlyr(Data)){
+      Data[[i]]<-terra::cellSize(Data[[i]],unit="ha")
+    }
+  }else{
+    Data<-terra::cellSize(Data,unit="ha")
   }
-  }
-  return(X)
-  }
+  
+  return(Data)
+}
+
 
 LSarea1<-reactive({
-  LSareaFun(CellSize.km,input$LSChoice,Mask=Farming_System())
+    LSareaFun(Data=LSprod())
 })
 
 # Rename layers
 LSarea<-reactive({
-  LSfun(Data=LSarea1(),Choice=input$LSChoice,Extension="_area",TotalName="LS",DoSum=F,IncTot=input$IncTot)
+  LSfun(Data=LSarea1(),Choice=input$LSChoice,Extension="_area",TotalName="LS",IncTot=input$IncTot)
 })
 
 ```
 
+**Livestock area (pixel size, ha)**
 ```{r Datasets - Plot LSarea, echo =F}
 renderPlot({terra::plot(LSarea(),
                         fun=AddBorders(),
-                        main="Livestock area (pixel size)",
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
                         col=viridis(n=20,
@@ -689,7 +696,7 @@ MSvop<-reactive({
 
 ```
 
-**MapSPAM Crop Value of Production (ln USD/pixel)**
+**MapSPAM Crop Value of Production ln(USD/pixel)**
 ```{r Datasets - Plot MSvop, echo =F}
 renderPlot({terra::plot(log(MSvop()),
                         fun=AddBorders(),
@@ -749,7 +756,7 @@ MSarea<-reactive({
 })
 ```
 
-**MapSPAM crop physical area - ln(ha)/pixel**
+**MapSPAM crop physical area - ln(ha/pixel)**
 ```{r Datasets - Plot MShparea, echo = F}
 renderPlot({terra::plot(log(MShparea()),
                         fun=AddBorders(),
@@ -766,7 +773,7 @@ renderPlot({terra::plot(log(MShparea()),
   },height=Plot.Height, width=Plot.Width)
 ```
 
-**MapSPAM crop harvested area - log(ha)/pixel**
+**MapSPAM crop harvested area - log(ha/pixel)**
 ```{r Datasets - Plot MSharea, echo = F}
 renderPlot({terra::plot(log(MSharea()),
                         pax=list(cex.axis=input$TextSize),
@@ -799,7 +806,7 @@ MSprod<-reactive({
 })
 ```
 
-**MapSPAM Production - ln(tons)/pixel**
+**MapSPAM Production - ln(ton/pixel)**
 ```{r Datasets - Plot MSprod, echo = F}
 renderPlot({terra::plot(log(MSprod()),         
                         fun=AddBorders(),
@@ -1283,28 +1290,35 @@ selectInput(inputId="USD_Units",
 
 Stack datasets
 ```{r Datasets - Stack datasets,echo=T}
+names(CellSize.ha)<-"Area.ha"
+
 Stacked<-reactive({
   c(Farming_System(),
     LSvop(),
+    LSarea(),
     LSprod(),
     MSvop(),
     MSarea(),
     MSprod(),
     Hpop(),
-    RainCV())
+    RainCV()
+    )
 })
 
 # Columns to sum
 SumCols<-reactive({
-  c(names(Stacked())[!names(Stacked()) %in% c("Farming_System","CellSize","RainCV")],"CellSize.km")
+  c(names(Stacked())[!names(Stacked()) %in% c("Farming_System","CellSize.ha","RainCV")],"CellSize.ha")
 })
 
 # Columns to analyse
-prod_cols<-reactive({names(MSprod())})
-area_cols<-reactive({names(MSarea())})
-vop_cols<-reactive({names(MSvop())})
-vop_cols_LS<-reactive({names(LSvop())})
+#prod_cols<-reactive({names(MSprod())})
+#area_cols<-reactive({names(MSarea())})
+#vop_cols<-reactive({names(MSvop())})
+#vop_cols_LS<-reactive({names(LSvop())})
 
+prod_cols<-reactive({c(names(MSprod()),names(LSprod()))})
+area_cols<-reactive({c(names(MSarea()),names(LSarea()))})
+vop_cols<-reactive({c(names(MSvop()),names(LSvop()))})
 ```
 
 Create function to extract and summarize variables by Farming System x Country
@@ -1314,7 +1328,7 @@ StackExtractor1<-function(Data,ExtractBy,SumCols,prod_cols,area_cols,vop_cols){
   Stacked<-lapply(1:length(ExtractBy),FUN=function(i){
     X<-ExtractBy[i]
     Y<-terra::mask(terra::crop(Data,X),X)
-    Y$CellSize.km<-terra::cellSize(Y[[1]],mask=T, unit="km")
+    Y$CellSize.ha<-terra::cellSize(Y[[1]],mask=T, unit="ha")
     Y
   })
   names(Stacked)<-ExtractBy$ADMIN
@@ -1323,7 +1337,7 @@ StackExtractor1<-function(Data,ExtractBy,SumCols,prod_cols,area_cols,vop_cols){
   Stats<-rbindlist(lapply(1:length(Stacked),FUN=function(i){
     X<-Stacked[[i]]
     Stats<-terra::zonal(X[[SumCols]],X[["Farming_System"]],fun=sum,na.rm=T)
-    colnames(Stats)[colnames(Stats)=="CellSize.km"]<-"Area.km2"
+    colnames(Stats)[colnames(Stats)=="CellSize.ha"]<-"Area.ha"
     Stats$RainCV.ln<-log(zonal(X[["RainCV"]],X[["Farming_System"]],fun=mean,na.rm=T)$RainCV)
     Stats$Country<-names(Stacked)[i]
     Stats
@@ -1337,8 +1351,8 @@ colnames(prices)<-gsub("_vop","_price",colnames(prices))
 
 Stats<-cbind(Stats,yields,prices)
 
-ColOrder<-c(c("Country","Farming_System","Area.km2","Hpop","RainCV.ln"),
-    colnames(Stats)[!colnames(Stats) %in% c("Country","Farming_System","Area.km2","Hpop","RainCV.ln")]
+ColOrder<-c(c("Country","Farming_System","Area.ha","Hpop","RainCV.ln"),
+    colnames(Stats)[!colnames(Stats) %in% c("Country","Farming_System","Area.ha","Hpop","RainCV.ln")]
   )
 
 Stats<-Stats[,..ColOrder]
@@ -1350,8 +1364,8 @@ return(Stats)
 Create function to calculate value of an annual increment in productivity:
 ```{r Analysis - Create AnnIncFun,echo=T}
 # Annual Increase 
-AnnIncFun<-function(Stats.Core,vop_cols,vop_cols_LS,Pr.Inc,AddFS){
-  Cols<-c("Farming_System","Country",vop_cols,vop_cols_LS)
+AnnIncFun<-function(Stats.Core,vop_cols,Pr.Inc,AddFS){
+  Cols<-c("Farming_System","Country",vop_cols)
   AnnualInc.Core<-Stats.Core[,..Cols]
   
   AnnualInc.Core<-melt(AnnualInc.Core,id.vars = c("Farming_System","Country"),variable.name = "Crop",value.name = "VOP")
@@ -1393,9 +1407,10 @@ MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,CostFactor){
          ][,A_adopt:=Area*Total_Adoption
            ][,VOP_non:=A_non_adopt*Y_non_adopt*Price
              ][,VOP_adopt:=A_adopt*Y_adopt*Price
-               ][,Marginal_VOP:=VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor
-                 ][,Total_VOP:=VOP_non+VOP_adopt
-                   ]
+               #][,Marginal_VOP:=VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor
+                ][,Marginal_VOP:=A_adopt*Price*(Y_adopt-Y_non_adopt)/CostFactor
+                   ][,Total_VOP:=VOP_non+VOP_adopt
+                     ]
   return(Data)
 
 }
@@ -1404,16 +1419,16 @@ MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,CostFactor){
 
 Create wrapper function for marginal increase in VoP which restructures data for analysis:
 ```{r Analysis - Marginal increase wrapper,echo=T}
-MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,System,CostFactor){
+MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,CostFactor){
 
-  ValCols<-paste0(rep(System,each=4),c("_vop","_yield","_price","_area"))
+  ValCols<-paste0(rep(Commodity,each=4),c("_vop","_yield","_price","_area"))
 
-  Cols<-c(ValCols,"Farming_System","Country","Area.km2")
-  Stats2<-melt(Data[,..Cols],id.vars = c("Country","Farming_System","Area.km2"),value.name = "StartVal",variable.name = "System")
-  Stats2[,Crop:=tstrsplit(System,"_",keep=1)
-         ][,Variable:=tstrsplit(System,"_",keep=2)][,System:=NULL]
+  Cols<-c(ValCols,"Farming_System","Country","Area.ha")
+  Stats2<-melt(Data[,..Cols],id.vars = c("Country","Farming_System","Area.ha"),value.name = "StartVal",variable.name = "Commodity")
+  Stats2[,Crop:=tstrsplit(Commodity,"_",keep=1)
+         ][,Variable:=tstrsplit(Commodity,"_",keep=2)][,Commodity:=NULL]
 
-  Stats2<-dcast(Stats2,Country+Farming_System+Area.km2+Crop~Variable,value.var = "StartVal")
+  Stats2<-dcast(Stats2,Country+Farming_System+Area.ha+Crop~Variable,value.var = "StartVal")
 
   MI.args<-data.table(expand.grid(Ad.Rate=Ad.Rates,Pr.Inc=Pr.Inc))
 
@@ -1432,7 +1447,7 @@ MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,System,CostFactor){
                                   Price=price,
                                   VOP=vop,
                                   CostFactor=CostFactor),
-                     by=list(Farming_System,Country,Crop,Area.km2,Ad.Rate,Pr.Inc)]
+                     by=list(Farming_System,Country,Crop,Area.ha,Ad.Rate,Pr.Inc)]
   return(Stats.Marg)
 }
 ```
@@ -1483,7 +1498,7 @@ AvLossWrapper<-function(CV_Data,Stats,CV_Change,CostFactor){
   Stats[,AvoidedLossPerc:=CV_Data[N,AvoidedLossPerc]
           ][,Marginal_VOP_CIS:=(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor
             ][,Marginal_VOP_Both:=Marginal_VOP_CIS+Marginal_VOP
-              ]
+              ][is.na(Marginal_VOP_Both),Marginal_VOP_Both:=Marginal_VOP]
   
   CV_Data[,element:=NULL
           ][,unit:=NULL
@@ -1536,7 +1551,7 @@ irr_wrapper<-function(NPV,InvestData,ProjectCost){
 ```
 
 #### Data extraction{.tabset .tabset-fade .tabset-pills}
-Each row in the extracted data tables represents a farming system within a country. Explanation of table headings: **`Area.km2`** = area (km2); **`Hpop`** = human population; **`RainCV.ln`** = natural log of mean rainfall CV; suffix **`vop`** = commodity value of production (international USD); suffix **`area`** = commodity area of production (km2); suffix **`yield`** = commodity yield (ton/ha); suffix **price** = 2005 commodity price (international USD/ton).
+Each row in the extracted data tables represents a farming system within a country. Explanation of table headings: **`Area.ha`** = area (ha); **`Hpop`** = human population; **`RainCV.ln`** = natural log of mean rainfall CV; suffix **`vop`** = commodity value of production (international USD); suffix **`area`** = commodity area of production (km2); suffix **`yield`** = commodity yield (ton/ha); suffix **price** = 2005 commodity price (international USD/ton).
 
 ##### Core countries{.tabset .tabset-fade .tabset-pills}
 ```{r Extraction - Core countries,echo=F}
@@ -1552,14 +1567,14 @@ Stats.Core<-reactive({
 AreaCalc<-function(Stats,CountryAreas){
   
     Data<-Stats[,ToTArea:=CountryAreas[match(Stats$Country,ADMIN),area]
-                 ][,Area:=round(100*Area.km2/ToTArea,1)
+                 ][,Area:=round(Area.ha/ToTArea,1)
                    ][,list(Country,Farming_System,Area)]
     
     
     ToTArea<-CountryAreas[ADMIN %in% Stats$Country,sum(area)]
     
-    Data2<-Stats[,list(Area.km2=sum(Area.km2,na.rm=T)),by=Farming_System
-                        ][,Area:=round(100*Area.km2/ToTArea,1)
+    Data2<-Stats[,list(Area.ha=sum(Area.ha,na.rm=T)),by=Farming_System
+                        ][,Area:=round(100*Area.ha/ToTArea,1)
                           ][,Country:="Total"
                             ][,list(Country,Farming_System,Area)]
     
@@ -1670,7 +1685,6 @@ This table shows the estimated direct benefits of adoption of CSA practices in t
 AnnInc<-reactive({
   AnnIncFun(Stats.Core=Stats.Core(),
                   vop_cols=vop_cols(),
-                  vop_cols_LS=vop_cols_LS(),
                   Pr.Inc=AI_PrInc(),
                   AddFS=F)
 })
@@ -1695,7 +1709,6 @@ This table shows the estimated spillover benefits of adoption of CSA practices i
 AnnIncSpill<-reactive({
   AnnIncFun(Stats.Core=Stats.Spillover(),
                   vop_cols=vop_cols(),
-                  vop_cols_LS=vop_cols_LS(),
                   Pr.Inc=AI_PrInc()*input$SpillFactor/100,
                   AddFS=F)
 })
@@ -1715,7 +1728,7 @@ AnnIncSpill<-reactive({
 
 #### Marginal increase in value{.tabset .tabset-fade .tabset-pills}
 Each row in the table represents a commodity x farming system x country combination for different values of annual adoption rate and productivity increment.  
-Explanation of table headings: **`Area.km2`** = area (km2); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **`Year`** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD), **`Marginal_VOP`** = marginal value of adoption (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`,**`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`.  
+Explanation of table headings: **`Area.ha`** = area (ha); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **`Year`** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD), **`Marginal_VOP`** = marginal value of adoption (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`,**`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`.  
 For more information on how `Total_Adoption` is calculated see the `MarginalInc` function found in the **Analysis::Data prep & analysis functions** tab.
 
 ##### Core countries{.tabset .tabset-fade .tabset-pills}
@@ -1728,7 +1741,7 @@ MI.Core<-reactive({
           Ad.Rates=Ad.Rates.Core(),
           Pr.Inc=Pr.Inc(),
           Years=input$Years,
-          System=input$CropChoice,
+          Commodity=c(input$CropChoice,input$LSChoice),
           CostFactor=input$CostFactor)
 })
 
@@ -1750,7 +1763,7 @@ MI.Core<-reactive({
 ```{r Analysis - MI Core DT No Countries, echo=F}
 
 MI.Core.Total<-reactive({
-  MI.Core()[Year==max(Year),list(Area.km2=sum(Area.km2,na.rm=T),
+  MI.Core()[Year==max(Year),list(Area.ha=sum(Area.ha,na.rm=T),
                   A_non_adopt=sum(A_non_adopt,na.rm=T),
                   A_adopt=sum(A_adopt,na.rm=T),
                   VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
@@ -1782,7 +1795,7 @@ MI.Spillover<-reactive({
                          Ad.Rates=Ad.Rates.Spillover(),
                          Pr.Inc=Pr.Inc(),
                          Years=input$Years,
-                         System=input$CropChoice,
+                         Commodity=c(input$CropChoice,input$LSChoice),
                          CostFactor=input$CostFactor)
 })
 ```
@@ -1803,7 +1816,7 @@ MI.Spillover<-reactive({
 ```{r Analysis - MI Spillover DT No Countries, echo=F}
 
 MI.Spill.Total<-reactive({
-  Stats.Spillover()[Year==max(Year),list(Area.km2=sum(Area.km2,na.rm=T),
+  Stats.Spillover()[Year==max(Year),list(Area.ha=sum(Area.ha,na.rm=T),
                   A_non_adopt=sum(A_non_adopt,na.rm=T),
                   A_adopt=sum(A_adopt,na.rm=T),
                   VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
@@ -1874,7 +1887,7 @@ This table is derived from the FAOSTAT data presented in the **Datasets::FAO** t
 
 ###### Marginal VoP inc. Non-CIS + CIS
 Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
-Explanation of table headings: **`Area.km2`** = area (km2); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
+Explanation of table headings: **`Area.ha`** = area (ha); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
 
 ```{r Analysis -  Core avoided losses DT Stats, echo=F}
 renderDT({
@@ -1892,7 +1905,7 @@ renderDT({
 ```{r Analysis - Core avoided losses DT Summary, echo=F}
 CoreCVSummary<-reactive({
   CoreCV()$Stats[Year==max(Year),
-                 list(Area.km2=sum(Area.km2,na.rm=T),
+                 list(Area.ha=sum(Area.ha,na.rm=T),
                     A_non_adopt=sum(A_non_adopt,na.rm=T),
                     A_adopt=sum(A_adopt,na.rm=T),
                     VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
@@ -1900,7 +1913,7 @@ CoreCVSummary<-reactive({
                     Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
                     Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units),
                     Marginal_VOP_CIS=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
-                    Marginal_VOP_Both=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units)),
+                    Marginal_VOP_Both=sum(Marginal_VOP_Both,na.rm = T)/as.numeric(input$USD_Units)),
                  by=list(Crop,Ad.Rate,Pr.Inc)
                  ][,Ad.Rate:=as.character(Ad.Rate)]
             
@@ -1944,7 +1957,7 @@ This table is derived from the FAO data presented in the **Datasets::FAO** tab. 
 
 ###### Marginal VoP inc. Non-CIS + CIS
 Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
-Explanation of table headings: **`Area.km2`** = area (km2); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
+Explanation of table headings: **`Area.ha`** = area (ha); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
 ```{r Analysis -  Spillover avoided losses DT Stats, echo=F}
 renderDT({
   datatable(dplyr::mutate_if(SpilloverCV()$Stats[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
@@ -1961,7 +1974,7 @@ renderDT({
 ```{r Analysis - Spillover avoided losses DT Summary, echo=F}
 SpillCVSummary<-reactive({
   SpilloverCV()$Stats[Year==max(Year),
-                      list(Area.km2=sum(Area.km2,na.rm=T),
+                      list(Area.ha=sum(Area.ha,na.rm=T),
                         A_non_adopt=sum(A_non_adopt,na.rm=T),
                         A_adopt=sum(A_adopt,na.rm=T),
                         VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
@@ -1969,7 +1982,7 @@ SpillCVSummary<-reactive({
                         Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
                         Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units),
                         Marginal_VOP_CIS=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
-                        Marginal_VOP_Both=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units)), 
+                        Marginal_VOP_Both=sum(Marginal_VOP_Both,na.rm = T)/as.numeric(input$USD_Units)), 
                       by=list(Crop,Ad.Rate,Pr.Inc)
                   ][,Ad.Rate:=as.character(Ad.Rate)]
             
@@ -1996,7 +2009,7 @@ The tabs below show the Net Present Value (NPV), Internal Rate of Return (IRR) a
 renderUI({
 checkboxGroupInput(inputId="InvestStatCrops", 
          label= NULL, 
-         choices = input$CropChoice, 
+         choices = c(input$CropChoice,input$LSChoice), 
          selected = c("maize"),
          inline = T)
 })
@@ -2055,18 +2068,6 @@ NPV<-reactive({
                  ][,Value:=NULL]
 })
 
-```
-
-```{r Analysis - NPV Calc 2 DT Core, echo=F,eval=F}
-  renderDT({
-    datatable(dplyr::mutate_if(NPV()[,!c("Avoided_loss_mean","Years")],is.numeric,~round(.,3)),
-                caption="",
-                extensions = 'Buttons',
-                filter = "top",
-                options = list(dom = 'Blfrtip',
-                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
-  })
 ```
 
 ###### Core + Spillover
@@ -2137,7 +2138,10 @@ InvestStats_IRR<-reactive({
 
 ```{r Analysis - IRR Calc DT Core, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(InvestStats_IRR()[,NPV:=NPV/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
+    datatable(data.table::copy(InvestStats_IRR())[,NPV:=NPV/as.numeric(input$USD_Units)
+                                                  ][,BCR:=round(BCR,3)
+                                                  ][,IRR=round(IRR,3)
+                                                    ][,Implied_Adoption=round(Implied_Adoption,3)],
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2160,7 +2164,10 @@ InvestStats_IRRspill<-reactive({
 
 ```{r Analysis - IRR Calc DT Spillover, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(InvestStats_IRRspill()[,NPV:=NPV/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
+    datatable(data.table::copy(InvestStats_IRRspill())[,NPV:=NPV/as.numeric(input$USD_Units)
+                                                  ][,BCR:=round(BCR,3)
+                                                    ][,IRR=round(IRR,3)
+                                                      ][,Implied_Adoption=round(Implied_Adoption,3)],
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
