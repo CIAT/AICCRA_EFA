@@ -1007,3 +1007,255 @@ S,TROF,HarvArea,spam2017V2r1_SSA_H_TROF_S.tif,tropical fruit,rainfed subsistence
 S,VEGE,HarvArea,spam2017V2r1_SSA_H_VEGE_S.tif,vegetables,rainfed subsistence,spam2017v2r1_ssa_harv_area.geotiff
 S,WHEA,HarvArea,spam2017V2r1_SSA_H_WHEA_S.tif,wheat,rainfed subsistence,spam2017v2r1_ssa_harv_area.geotiff
 S,YAMS,HarvArea,spam2017V2r1_SSA_H_YAMS_S.tif,yams,rainfed subsistence,spam2017v2r1_ssa_harv_area.geotiff
+A,ACOF,Yield,spam2017V2r1_SSA_Y_ACOF_A.tif,arabica coffee,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,BANA,Yield,spam2017V2r1_SSA_Y_BANA_A.tif,banana,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,BARL,Yield,spam2017V2r1_SSA_Y_BARL_A.tif,barley,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,BEAN,Yield,spam2017V2r1_SSA_Y_BEAN_A.tif,bean,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,CASS,Yield,spam2017V2r1_SSA_Y_CASS_A.tif,cassava,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,CHIC,Yield,spam2017V2r1_SSA_Y_CHIC_A.tif,chickpea,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,CNUT,Yield,spam2017V2r1_SSA_Y_CNUT_A.tif,coconut,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,COCO,Yield,spam2017V2r1_SSA_Y_COCO_A.tif,cocoa,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,COTT,Yield,spam2017V2r1_SSA_Y_COTT_A.tif,cotton,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,COWP,Yield,spam2017V2r1_SSA_Y_COWP_A.tif,cowpea,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,GROU,Yield,spam2017V2r1_SSA_Y_GROU_A.tif,groundnut,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,LENT,Yield,spam2017V2r1_SSA_Y_LENT_A.tif,lentil,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,MAIZ,Yield,spam2017V2r1_SSA_Y_MAIZ_A.tif,maize,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,OCER,Yield,spam2017V2r1_SSA_Y_OCER_A.tif,other cereals,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,OFIB,Yield,spam2017V2r1_SSA_Y_OFIB_A.tif,other fibre crops,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,OILP,Yield,spam2017V2r1_SSA_Y_OILP_A.tif,oilpalm,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,OOIL,Yield,spam2017V2r1_SSA_Y_OOIL_A.tif,other oil crops,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,OPUL,Yield,spam2017V2r1_SSA_Y_OPUL_A.tif,other pulses,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,ORTS,Yield,spam2017V2r1_SSA_Y_ORTS_A.tif,other roots,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,PIGE,Yield,spam2017V2r1_SSA_Y_PIGE_A.tif,pigeonpea,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,PLNT,Yield,spam2017V2r1_SSA_Y_PLNT_A.tif,plantain,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,PMIL,Yield,spam2017V2r1_SSA_Y_PMIL_A.tif,pearl millet,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,POTA,Yield,spam2017V2r1_SSA_Y_POTA_A.tif,potato,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,RAPE,Yield,spam2017V2r1_SSA_Y_RAPE_A.tif,rapeseed,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,RCOF,Yield,spam2017V2r1_SSA_Y_RCOF_A.tif,robusta coffee,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,REST,Yield,spam2017V2r1_SSA_Y_REST_A.tif,rest of crops,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,RICE,Yield,spam2017V2r1_SSA_Y_RICE_A.tif,rice,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SESA,Yield,spam2017V2r1_SSA_Y_SESA_A.tif,sesameseed,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SMIL,Yield,spam2017V2r1_SSA_Y_SMIL_A.tif,small millet,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SORG,Yield,spam2017V2r1_SSA_Y_SORG_A.tif,sorghum,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SOYB,Yield,spam2017V2r1_SSA_Y_SOYB_A.tif,soybean,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SUGB,Yield,spam2017V2r1_SSA_Y_SUGB_A.tif,sugarbeet,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SUGC,Yield,spam2017V2r1_SSA_Y_SUGC_A.tif,sugarcane,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SUNF,Yield,spam2017V2r1_SSA_Y_SUNF_A.tif,sunflower,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,SWPO,Yield,spam2017V2r1_SSA_Y_SWPO_A.tif,sweet potato,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,TEAS,Yield,spam2017V2r1_SSA_Y_TEAS_A.tif,tea,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,TEMF,Yield,spam2017V2r1_SSA_Y_TEMF_A.tif,temperate fruit,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,TOBA,Yield,spam2017V2r1_SSA_Y_TOBA_A.tif,tobacco,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,TROF,Yield,spam2017V2r1_SSA_Y_TROF_A.tif,tropical fruit,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,VEGE,Yield,spam2017V2r1_SSA_Y_VEGE_A.tif,vegetables,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,WHEA,Yield,spam2017V2r1_SSA_Y_WHEA_A.tif,wheat,all technologies,spam2017v2r1_ssa_yield.geotiff
+A,YAMS,Yield,spam2017V2r1_SSA_Y_YAMS_A.tif,yams,all technologies,spam2017v2r1_ssa_yield.geotiff
+H,ACOF,Yield,spam2017V2r1_SSA_Y_ACOF_H.tif,arabica coffee,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,BANA,Yield,spam2017V2r1_SSA_Y_BANA_H.tif,banana,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,BARL,Yield,spam2017V2r1_SSA_Y_BARL_H.tif,barley,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,BEAN,Yield,spam2017V2r1_SSA_Y_BEAN_H.tif,bean,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,CASS,Yield,spam2017V2r1_SSA_Y_CASS_H.tif,cassava,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,CHIC,Yield,spam2017V2r1_SSA_Y_CHIC_H.tif,chickpea,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,CNUT,Yield,spam2017V2r1_SSA_Y_CNUT_H.tif,coconut,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,COCO,Yield,spam2017V2r1_SSA_Y_COCO_H.tif,cocoa,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,COTT,Yield,spam2017V2r1_SSA_Y_COTT_H.tif,cotton,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,COWP,Yield,spam2017V2r1_SSA_Y_COWP_H.tif,cowpea,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,GROU,Yield,spam2017V2r1_SSA_Y_GROU_H.tif,groundnut,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,LENT,Yield,spam2017V2r1_SSA_Y_LENT_H.tif,lentil,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,MAIZ,Yield,spam2017V2r1_SSA_Y_MAIZ_H.tif,maize,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,OCER,Yield,spam2017V2r1_SSA_Y_OCER_H.tif,other cereals,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,OFIB,Yield,spam2017V2r1_SSA_Y_OFIB_H.tif,other fibre crops,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,OILP,Yield,spam2017V2r1_SSA_Y_OILP_H.tif,oilpalm,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,OOIL,Yield,spam2017V2r1_SSA_Y_OOIL_H.tif,other oil crops,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,OPUL,Yield,spam2017V2r1_SSA_Y_OPUL_H.tif,other pulses,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,ORTS,Yield,spam2017V2r1_SSA_Y_ORTS_H.tif,other roots,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,PIGE,Yield,spam2017V2r1_SSA_Y_PIGE_H.tif,pigeonpea,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,PLNT,Yield,spam2017V2r1_SSA_Y_PLNT_H.tif,plantain,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,PMIL,Yield,spam2017V2r1_SSA_Y_PMIL_H.tif,pearl millet,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,POTA,Yield,spam2017V2r1_SSA_Y_POTA_H.tif,potato,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,RAPE,Yield,spam2017V2r1_SSA_Y_RAPE_H.tif,rapeseed,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,RCOF,Yield,spam2017V2r1_SSA_Y_RCOF_H.tif,robusta coffee,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,REST,Yield,spam2017V2r1_SSA_Y_REST_H.tif,rest of crops,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,RICE,Yield,spam2017V2r1_SSA_Y_RICE_H.tif,rice,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SESA,Yield,spam2017V2r1_SSA_Y_SESA_H.tif,sesameseed,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SMIL,Yield,spam2017V2r1_SSA_Y_SMIL_H.tif,small millet,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SORG,Yield,spam2017V2r1_SSA_Y_SORG_H.tif,sorghum,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SOYB,Yield,spam2017V2r1_SSA_Y_SOYB_H.tif,soybean,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SUGB,Yield,spam2017V2r1_SSA_Y_SUGB_H.tif,sugarbeet,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SUGC,Yield,spam2017V2r1_SSA_Y_SUGC_H.tif,sugarcane,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SUNF,Yield,spam2017V2r1_SSA_Y_SUNF_H.tif,sunflower,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,SWPO,Yield,spam2017V2r1_SSA_Y_SWPO_H.tif,sweet potato,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,TEAS,Yield,spam2017V2r1_SSA_Y_TEAS_H.tif,tea,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,TEMF,Yield,spam2017V2r1_SSA_Y_TEMF_H.tif,temperate fruit,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,TOBA,Yield,spam2017V2r1_SSA_Y_TOBA_H.tif,tobacco,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,TROF,Yield,spam2017V2r1_SSA_Y_TROF_H.tif,tropical fruit,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,VEGE,Yield,spam2017V2r1_SSA_Y_VEGE_H.tif,vegetables,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,WHEA,Yield,spam2017V2r1_SSA_Y_WHEA_H.tif,wheat,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+H,YAMS,Yield,spam2017V2r1_SSA_Y_YAMS_H.tif,yams,rainfed high inputs,spam2017v2r1_ssa_yield.geotiff
+I,ACOF,Yield,spam2017V2r1_SSA_Y_ACOF_I.tif,arabica coffee,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,BANA,Yield,spam2017V2r1_SSA_Y_BANA_I.tif,banana,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,BARL,Yield,spam2017V2r1_SSA_Y_BARL_I.tif,barley,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,BEAN,Yield,spam2017V2r1_SSA_Y_BEAN_I.tif,bean,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,CASS,Yield,spam2017V2r1_SSA_Y_CASS_I.tif,cassava,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,CHIC,Yield,spam2017V2r1_SSA_Y_CHIC_I.tif,chickpea,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,CNUT,Yield,spam2017V2r1_SSA_Y_CNUT_I.tif,coconut,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,COCO,Yield,spam2017V2r1_SSA_Y_COCO_I.tif,cocoa,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,COTT,Yield,spam2017V2r1_SSA_Y_COTT_I.tif,cotton,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,COWP,Yield,spam2017V2r1_SSA_Y_COWP_I.tif,cowpea,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,GROU,Yield,spam2017V2r1_SSA_Y_GROU_I.tif,groundnut,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,LENT,Yield,spam2017V2r1_SSA_Y_LENT_I.tif,lentil,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,MAIZ,Yield,spam2017V2r1_SSA_Y_MAIZ_I.tif,maize,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,OCER,Yield,spam2017V2r1_SSA_Y_OCER_I.tif,other cereals,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,OFIB,Yield,spam2017V2r1_SSA_Y_OFIB_I.tif,other fibre crops,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,OILP,Yield,spam2017V2r1_SSA_Y_OILP_I.tif,oilpalm,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,OOIL,Yield,spam2017V2r1_SSA_Y_OOIL_I.tif,other oil crops,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,OPUL,Yield,spam2017V2r1_SSA_Y_OPUL_I.tif,other pulses,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,ORTS,Yield,spam2017V2r1_SSA_Y_ORTS_I.tif,other roots,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,PIGE,Yield,spam2017V2r1_SSA_Y_PIGE_I.tif,pigeonpea,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,PLNT,Yield,spam2017V2r1_SSA_Y_PLNT_I.tif,plantain,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,PMIL,Yield,spam2017V2r1_SSA_Y_PMIL_I.tif,pearl millet,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,POTA,Yield,spam2017V2r1_SSA_Y_POTA_I.tif,potato,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,RAPE,Yield,spam2017V2r1_SSA_Y_RAPE_I.tif,rapeseed,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,RCOF,Yield,spam2017V2r1_SSA_Y_RCOF_I.tif,robusta coffee,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,REST,Yield,spam2017V2r1_SSA_Y_REST_I.tif,rest of crops,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,RICE,Yield,spam2017V2r1_SSA_Y_RICE_I.tif,rice,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SESA,Yield,spam2017V2r1_SSA_Y_SESA_I.tif,sesameseed,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SMIL,Yield,spam2017V2r1_SSA_Y_SMIL_I.tif,small millet,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SORG,Yield,spam2017V2r1_SSA_Y_SORG_I.tif,sorghum,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SOYB,Yield,spam2017V2r1_SSA_Y_SOYB_I.tif,soybean,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SUGB,Yield,spam2017V2r1_SSA_Y_SUGB_I.tif,sugarbeet,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SUGC,Yield,spam2017V2r1_SSA_Y_SUGC_I.tif,sugarcane,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SUNF,Yield,spam2017V2r1_SSA_Y_SUNF_I.tif,sunflower,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,SWPO,Yield,spam2017V2r1_SSA_Y_SWPO_I.tif,sweet potato,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,TEAS,Yield,spam2017V2r1_SSA_Y_TEAS_I.tif,tea,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,TEMF,Yield,spam2017V2r1_SSA_Y_TEMF_I.tif,temperate fruit,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,TOBA,Yield,spam2017V2r1_SSA_Y_TOBA_I.tif,tobacco,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,TROF,Yield,spam2017V2r1_SSA_Y_TROF_I.tif,tropical fruit,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,VEGE,Yield,spam2017V2r1_SSA_Y_VEGE_I.tif,vegetables,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,WHEA,Yield,spam2017V2r1_SSA_Y_WHEA_I.tif,wheat,irrigated,spam2017v2r1_ssa_yield.geotiff
+I,YAMS,Yield,spam2017V2r1_SSA_Y_YAMS_I.tif,yams,irrigated,spam2017v2r1_ssa_yield.geotiff
+L,ACOF,Yield,spam2017V2r1_SSA_Y_ACOF_L.tif,arabica coffee,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,BANA,Yield,spam2017V2r1_SSA_Y_BANA_L.tif,banana,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,BARL,Yield,spam2017V2r1_SSA_Y_BARL_L.tif,barley,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,BEAN,Yield,spam2017V2r1_SSA_Y_BEAN_L.tif,bean,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,CASS,Yield,spam2017V2r1_SSA_Y_CASS_L.tif,cassava,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,CHIC,Yield,spam2017V2r1_SSA_Y_CHIC_L.tif,chickpea,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,CNUT,Yield,spam2017V2r1_SSA_Y_CNUT_L.tif,coconut,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,COCO,Yield,spam2017V2r1_SSA_Y_COCO_L.tif,cocoa,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,COTT,Yield,spam2017V2r1_SSA_Y_COTT_L.tif,cotton,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,COWP,Yield,spam2017V2r1_SSA_Y_COWP_L.tif,cowpea,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,GROU,Yield,spam2017V2r1_SSA_Y_GROU_L.tif,groundnut,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,LENT,Yield,spam2017V2r1_SSA_Y_LENT_L.tif,lentil,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,MAIZ,Yield,spam2017V2r1_SSA_Y_MAIZ_L.tif,maize,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,OCER,Yield,spam2017V2r1_SSA_Y_OCER_L.tif,other cereals,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,OFIB,Yield,spam2017V2r1_SSA_Y_OFIB_L.tif,other fibre crops,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,OILP,Yield,spam2017V2r1_SSA_Y_OILP_L.tif,oilpalm,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,OOIL,Yield,spam2017V2r1_SSA_Y_OOIL_L.tif,other oil crops,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,OPUL,Yield,spam2017V2r1_SSA_Y_OPUL_L.tif,other pulses,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,ORTS,Yield,spam2017V2r1_SSA_Y_ORTS_L.tif,other roots,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,PIGE,Yield,spam2017V2r1_SSA_Y_PIGE_L.tif,pigeonpea,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,PLNT,Yield,spam2017V2r1_SSA_Y_PLNT_L.tif,plantain,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,PMIL,Yield,spam2017V2r1_SSA_Y_PMIL_L.tif,pearl millet,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,POTA,Yield,spam2017V2r1_SSA_Y_POTA_L.tif,potato,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,RAPE,Yield,spam2017V2r1_SSA_Y_RAPE_L.tif,rapeseed,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,RCOF,Yield,spam2017V2r1_SSA_Y_RCOF_L.tif,robusta coffee,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,REST,Yield,spam2017V2r1_SSA_Y_REST_L.tif,rest of crops,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,RICE,Yield,spam2017V2r1_SSA_Y_RICE_L.tif,rice,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SESA,Yield,spam2017V2r1_SSA_Y_SESA_L.tif,sesameseed,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SMIL,Yield,spam2017V2r1_SSA_Y_SMIL_L.tif,small millet,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SORG,Yield,spam2017V2r1_SSA_Y_SORG_L.tif,sorghum,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SOYB,Yield,spam2017V2r1_SSA_Y_SOYB_L.tif,soybean,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SUGB,Yield,spam2017V2r1_SSA_Y_SUGB_L.tif,sugarbeet,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SUGC,Yield,spam2017V2r1_SSA_Y_SUGC_L.tif,sugarcane,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SUNF,Yield,spam2017V2r1_SSA_Y_SUNF_L.tif,sunflower,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,SWPO,Yield,spam2017V2r1_SSA_Y_SWPO_L.tif,sweet potato,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,TEAS,Yield,spam2017V2r1_SSA_Y_TEAS_L.tif,tea,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,TEMF,Yield,spam2017V2r1_SSA_Y_TEMF_L.tif,temperate fruit,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,TOBA,Yield,spam2017V2r1_SSA_Y_TOBA_L.tif,tobacco,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,TROF,Yield,spam2017V2r1_SSA_Y_TROF_L.tif,tropical fruit,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,VEGE,Yield,spam2017V2r1_SSA_Y_VEGE_L.tif,vegetables,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,WHEA,Yield,spam2017V2r1_SSA_Y_WHEA_L.tif,wheat,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+L,YAMS,Yield,spam2017V2r1_SSA_Y_YAMS_L.tif,yams,rainfed low inputs,spam2017v2r1_ssa_yield.geotiff
+R,ACOF,Yield,spam2017V2r1_SSA_Y_ACOF_R.tif,arabica coffee,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,BANA,Yield,spam2017V2r1_SSA_Y_BANA_R.tif,banana,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,BARL,Yield,spam2017V2r1_SSA_Y_BARL_R.tif,barley,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,BEAN,Yield,spam2017V2r1_SSA_Y_BEAN_R.tif,bean,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,CASS,Yield,spam2017V2r1_SSA_Y_CASS_R.tif,cassava,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,CHIC,Yield,spam2017V2r1_SSA_Y_CHIC_R.tif,chickpea,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,CNUT,Yield,spam2017V2r1_SSA_Y_CNUT_R.tif,coconut,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,COCO,Yield,spam2017V2r1_SSA_Y_COCO_R.tif,cocoa,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,COTT,Yield,spam2017V2r1_SSA_Y_COTT_R.tif,cotton,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,COWP,Yield,spam2017V2r1_SSA_Y_COWP_R.tif,cowpea,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,GROU,Yield,spam2017V2r1_SSA_Y_GROU_R.tif,groundnut,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,LENT,Yield,spam2017V2r1_SSA_Y_LENT_R.tif,lentil,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,MAIZ,Yield,spam2017V2r1_SSA_Y_MAIZ_R.tif,maize,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,OCER,Yield,spam2017V2r1_SSA_Y_OCER_R.tif,other cereals,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,OFIB,Yield,spam2017V2r1_SSA_Y_OFIB_R.tif,other fibre crops,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,OILP,Yield,spam2017V2r1_SSA_Y_OILP_R.tif,oilpalm,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,OOIL,Yield,spam2017V2r1_SSA_Y_OOIL_R.tif,other oil crops,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,OPUL,Yield,spam2017V2r1_SSA_Y_OPUL_R.tif,other pulses,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,ORTS,Yield,spam2017V2r1_SSA_Y_ORTS_R.tif,other roots,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,PIGE,Yield,spam2017V2r1_SSA_Y_PIGE_R.tif,pigeonpea,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,PLNT,Yield,spam2017V2r1_SSA_Y_PLNT_R.tif,plantain,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,PMIL,Yield,spam2017V2r1_SSA_Y_PMIL_R.tif,pearl millet,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,POTA,Yield,spam2017V2r1_SSA_Y_POTA_R.tif,potato,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,RAPE,Yield,spam2017V2r1_SSA_Y_RAPE_R.tif,rapeseed,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,RCOF,Yield,spam2017V2r1_SSA_Y_RCOF_R.tif,robusta coffee,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,REST,Yield,spam2017V2r1_SSA_Y_REST_R.tif,rest of crops,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,RICE,Yield,spam2017V2r1_SSA_Y_RICE_R.tif,rice,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SESA,Yield,spam2017V2r1_SSA_Y_SESA_R.tif,sesameseed,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SMIL,Yield,spam2017V2r1_SSA_Y_SMIL_R.tif,small millet,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SORG,Yield,spam2017V2r1_SSA_Y_SORG_R.tif,sorghum,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SOYB,Yield,spam2017V2r1_SSA_Y_SOYB_R.tif,soybean,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SUGB,Yield,spam2017V2r1_SSA_Y_SUGB_R.tif,sugarbeet,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SUGC,Yield,spam2017V2r1_SSA_Y_SUGC_R.tif,sugarcane,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SUNF,Yield,spam2017V2r1_SSA_Y_SUNF_R.tif,sunflower,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,SWPO,Yield,spam2017V2r1_SSA_Y_SWPO_R.tif,sweet potato,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,TEAS,Yield,spam2017V2r1_SSA_Y_TEAS_R.tif,tea,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,TEMF,Yield,spam2017V2r1_SSA_Y_TEMF_R.tif,temperate fruit,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,TOBA,Yield,spam2017V2r1_SSA_Y_TOBA_R.tif,tobacco,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,TROF,Yield,spam2017V2r1_SSA_Y_TROF_R.tif,tropical fruit,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,VEGE,Yield,spam2017V2r1_SSA_Y_VEGE_R.tif,vegetables,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,WHEA,Yield,spam2017V2r1_SSA_Y_WHEA_R.tif,wheat,rainfed all,spam2017v2r1_ssa_yield.geotiff
+R,YAMS,Yield,spam2017V2r1_SSA_Y_YAMS_R.tif,yams,rainfed all,spam2017v2r1_ssa_yield.geotiff
+S,ACOF,Yield,spam2017V2r1_SSA_Y_ACOF_S.tif,arabica coffee,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,BANA,Yield,spam2017V2r1_SSA_Y_BANA_S.tif,banana,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,BARL,Yield,spam2017V2r1_SSA_Y_BARL_S.tif,barley,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,BEAN,Yield,spam2017V2r1_SSA_Y_BEAN_S.tif,bean,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,CASS,Yield,spam2017V2r1_SSA_Y_CASS_S.tif,cassava,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,CHIC,Yield,spam2017V2r1_SSA_Y_CHIC_S.tif,chickpea,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,CNUT,Yield,spam2017V2r1_SSA_Y_CNUT_S.tif,coconut,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,COCO,Yield,spam2017V2r1_SSA_Y_COCO_S.tif,cocoa,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,COTT,Yield,spam2017V2r1_SSA_Y_COTT_S.tif,cotton,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,COWP,Yield,spam2017V2r1_SSA_Y_COWP_S.tif,cowpea,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,GROU,Yield,spam2017V2r1_SSA_Y_GROU_S.tif,groundnut,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,LENT,Yield,spam2017V2r1_SSA_Y_LENT_S.tif,lentil,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,MAIZ,Yield,spam2017V2r1_SSA_Y_MAIZ_S.tif,maize,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,OCER,Yield,spam2017V2r1_SSA_Y_OCER_S.tif,other cereals,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,OFIB,Yield,spam2017V2r1_SSA_Y_OFIB_S.tif,other fibre crops,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,OILP,Yield,spam2017V2r1_SSA_Y_OILP_S.tif,oilpalm,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,OOIL,Yield,spam2017V2r1_SSA_Y_OOIL_S.tif,other oil crops,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,OPUL,Yield,spam2017V2r1_SSA_Y_OPUL_S.tif,other pulses,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,ORTS,Yield,spam2017V2r1_SSA_Y_ORTS_S.tif,other roots,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,PIGE,Yield,spam2017V2r1_SSA_Y_PIGE_S.tif,pigeonpea,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,PLNT,Yield,spam2017V2r1_SSA_Y_PLNT_S.tif,plantain,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,PMIL,Yield,spam2017V2r1_SSA_Y_PMIL_S.tif,pearl millet,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,POTA,Yield,spam2017V2r1_SSA_Y_POTA_S.tif,potato,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,RAPE,Yield,spam2017V2r1_SSA_Y_RAPE_S.tif,rapeseed,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,RCOF,Yield,spam2017V2r1_SSA_Y_RCOF_S.tif,robusta coffee,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,REST,Yield,spam2017V2r1_SSA_Y_REST_S.tif,rest of crops,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,RICE,Yield,spam2017V2r1_SSA_Y_RICE_S.tif,rice,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SESA,Yield,spam2017V2r1_SSA_Y_SESA_S.tif,sesameseed,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SMIL,Yield,spam2017V2r1_SSA_Y_SMIL_S.tif,small millet,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SORG,Yield,spam2017V2r1_SSA_Y_SORG_S.tif,sorghum,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SOYB,Yield,spam2017V2r1_SSA_Y_SOYB_S.tif,soybean,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SUGB,Yield,spam2017V2r1_SSA_Y_SUGB_S.tif,sugarbeet,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SUGC,Yield,spam2017V2r1_SSA_Y_SUGC_S.tif,sugarcane,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SUNF,Yield,spam2017V2r1_SSA_Y_SUNF_S.tif,sunflower,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,SWPO,Yield,spam2017V2r1_SSA_Y_SWPO_S.tif,sweet potato,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,TEAS,Yield,spam2017V2r1_SSA_Y_TEAS_S.tif,tea,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,TEMF,Yield,spam2017V2r1_SSA_Y_TEMF_S.tif,temperate fruit,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,TOBA,Yield,spam2017V2r1_SSA_Y_TOBA_S.tif,tobacco,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,TROF,Yield,spam2017V2r1_SSA_Y_TROF_S.tif,tropical fruit,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,VEGE,Yield,spam2017V2r1_SSA_Y_VEGE_S.tif,vegetables,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,WHEA,Yield,spam2017V2r1_SSA_Y_WHEA_S.tif,wheat,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
+S,YAMS,Yield,spam2017V2r1_SSA_Y_YAMS_S.tif,yams,rainfed subsistence,spam2017v2r1_ssa_yield.geotiff
