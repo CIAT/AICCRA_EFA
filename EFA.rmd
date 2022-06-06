@@ -2140,8 +2140,8 @@ InvestStats_IRR<-reactive({
   renderDT({
     datatable(data.table::copy(InvestStats_IRR())[,NPV:=NPV/as.numeric(input$USD_Units)
                                                   ][,BCR:=round(BCR,3)
-                                                  ][,IRR=round(IRR,3)
-                                                    ][,Implied_Adoption=round(Implied_Adoption,3)],
+                                                  ][,IRR:=round(IRR,3)
+                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)],
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2166,7 +2166,7 @@ InvestStats_IRRspill<-reactive({
   renderDT({
     datatable(data.table::copy(InvestStats_IRRspill())[,NPV:=NPV/as.numeric(input$USD_Units)
                                                   ][,BCR:=round(BCR,3)
-                                                    ][,IRR=round(IRR,3)
+                                                    ][,IRR:=round(IRR,3)
                                                       ][,Implied_Adoption:=round(Implied_Adoption,3)],
                 caption="",
                 extensions = 'Buttons',
