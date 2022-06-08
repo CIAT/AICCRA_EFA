@@ -453,12 +453,8 @@ renderPlot({terra::plot(CGIAR_countries2(),
            height=Plot.Height, width=Plot.Width)
 ```
 
-#### Farming Systems
-[GLPC Livestock Production Systems (LPS) map](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/WPDSZE) by [Robinson et al. 2014](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0096084)
-
-*ADD DETAILS FOR ADAPTATION ATLAS LAYERS*
 ```{r Datasets - Subset farming system, echo = F}
-
+# This code relates to the farming system section, but is deliberately place here as when placed in the farming systems section it seemed to only activate when that tab was selected by the user. This prevented any analysis from proceeding.
 FSsub_Fun<-function(FS,Choice,Mask){
   Mapped<-data.table(N=sort(unique(FS2[])),Level=terra::levels(FS)[[1]])
   N<-Mapped[Level %in% Choice,N]
@@ -479,6 +475,12 @@ Farming_System<-reactive({
 })
 
 ```
+
+
+#### Farming Systems
+[GLPC Livestock Production Systems (LPS) map](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/WPDSZE) by [Robinson et al. 2014](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0096084)
+
+*ADD DETAILS FOR ADAPTATION ATLAS LAYERS*
 
 ```{r Datasets- Plot farming system, echo =F}
 renderPlot({terra::plot(Farming_System(),
