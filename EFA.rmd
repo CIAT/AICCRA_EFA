@@ -14,6 +14,7 @@ runtime: shiny
 </style>
   
 ```{r Setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "C:/Documents/OneDrive - CGIAR/Projects/AICCRA/AICCRA_EFA")
 knitr::opts_chunk$set(echo = F)
 ```
 
@@ -231,7 +232,7 @@ ExtractBy.All<-reactive({
 ::::
 
 **Farming systems**
-```{r Farming Systems, echo=F,eval=T}
+```{r Farming Systems - Atlas, echo=F,eval=T}
 
 if(!file.exists("Data/Farming_systems/FS1.tif")){
 FarmSys<-terra::vect("Data/Farming_systems/fs_lev_2_update.shp")
@@ -269,14 +270,16 @@ data.table::fwrite(FS_Metadata,file="Data/Farming_systems/FS_Metadata.csv")
  FS2<-terra::rast("Data/Farming_systems/FS2.tif")
  FS_Metadata<-data.table::fread("Data/Farming_systems/FS_Metadata.csv") 
 }
-
+```
+    
+```{r Farming Systems - GPLS, echo=F,eval=T}
 # GLPS
 GPLS_Legend<-data.table::fread("Data/GLPS/LPS_legend_RGB.csv")
 
 LPS<-terra::crop(terra::resample(terra::rast("Data/GLPS/glps_gleam_61113_10km.tif"),BaseRaster,method="near"),CGIAR_countries)
 LPS<-terra::mask(LPS,CGIAR_countries)
 LPS<-LPS-1
-LPS<-terra::as.factor(LPS)
+#LPS<-terra::as.factor(LPS)
 LPS<-terra::categories(LPS,layer=1,value=GPLS_Legend$System_Full)
 
 ```
@@ -1190,16 +1193,16 @@ renderPlot({terra::plot(log(RainCV()),
 
 :::
 :::{}
-*The marginal benefits of adoption are divided*  
-*by the cost factor to account for increased*  
-*on-farm costs*
-```{r Parameter - Cost Factor,echo=F}
-  numericInput(inputId="CostFactor", 
-              label="Cost factor",
-              value = 2.5,
+*Benefit-cost ratio for non-adopters*  
+*Harris and Orr (2013) find this is *  
+*1.62 for "traditional" technologies*
+```{r Parameter - Non BCR,echo=F}
+  numericInput(inputId="Non_BCR", 
+              label="BCR of non-adopters",
+              value = 1.62,
               min=0,              
               max=10,
-              step = 0.1,
+              step = 0.01,
               width="300px")
 ```
 :::
@@ -1391,28 +1394,38 @@ AnnIncFun<-function(Stats.Core,vop_cols,Pr.Inc,AddFS){
 
 Create function to calculate marginal increase in value of production (VoP):
 ```{r Analysis - Marginal Increase,echo=T}
-MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,CostFactor){
-
+MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,Non_BCR){
+  
+  
+  CostAdopt<-(Yield*Price)/Non_BCR
+  CostNonAdopt<-((1+Pr.Inc)*Yield*Price)/Non_BCR
+  
   Data<-data.table(Y_non_adopt=Yield,
              Y_adopt=Yield*(1+Pr.Inc),
              Year=1:Years
              )
 
-  Total_Adoption<-Ad.Rate
+  Total_adoption<-Ad.Rate
 
   for(i in 2:Years){
-    Total_Adoption[i]<-(1-sum(Total_Adoption))*Ad.Rate
+    Total_adoption[i]<-(1-sum(Total_adoption))*Ad.Rate
   }
 
-  Data[,Price:=Price][,Total_Adoption:=cumsum(Total_Adoption)
-       ][,A_non_adopt:=Area*(1-Total_Adoption)
-         ][,A_adopt:=Area*Total_Adoption
-           ][,VOP_non:=A_non_adopt*Y_non_adopt*Price
-             ][,VOP_adopt:=A_adopt*Y_adopt*Price
-               #][,Marginal_VOP:=VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor
-                ][,Marginal_VOP:=A_adopt*Price*(Y_adopt-Y_non_adopt)/CostFactor
-                   ][,Total_VOP:=VOP_non+VOP_adopt
-                     ]
+  Data[,Price:=Price
+       ][,Cost_adopt:=CostAdopt
+         ][,Cost_non_adopt:=CostNonAdopt
+           ][,Total_adoption:=cumsum(Total_adoption)
+             ][,A_non_adopt:=Area*(1-Total_adoption)
+               ][,A_adopt:=Area*Total_adoption
+                 ][,VOP_non_adopt:=A_non_adopt*Y_non_adopt*Price
+                   ][,VOP_adopt:=A_adopt*Y_adopt*Price
+                     ][,NR_non_adopt:=A_non_adopt*(Y_non_adopt*Price-Cost_non_adopt)
+                       ][,NR_adopt:=A_adopt*(Y_adopt*Price-Cost_adopt)]
+  
+
+  NR_non_adopt_Year0<-Area*(Yield*Price-CostNonAdopt)
+  Data[,Project_benefits:=NR_non_adopt+NR_adopt-NR_non_adopt_Year0]
+  
   return(Data)
 
 }
@@ -1421,7 +1434,7 @@ MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,CostFactor){
 
 Create wrapper function for marginal increase in VoP which restructures data for analysis:
 ```{r Analysis - Marginal increase wrapper,echo=T}
-MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,CostFactor){
+MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,Non_BCR){
 
   ValCols<-paste0(rep(Commodity,each=4),c("_vop","_yield","_price","_area"))
 
@@ -1448,7 +1461,7 @@ MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,CostFactor){
                                   Area=area,
                                   Price=price,
                                   VOP=vop,
-                                  CostFactor=CostFactor),
+                                  Non_BCR=Non_BCR),
                      by=list(Farming_System,Country,Crop,Area.ha,Ad.Rate,Pr.Inc)]
   return(Stats.Marg)
 }
@@ -1489,27 +1502,62 @@ return(AVLoss)
 
 Create wrapper function for avoided yield loss which recalculates marginal benefits:
 ```{r Analysis - Avoided Loss Wrapper, echo=T}
-AvLossWrapper<-function(CV_Data,Stats,CV_Change,CostFactor){
+AvLossWrapper<-function(CV_Data,Stats,CV_Change){
   CV_Data[,CVreduced:=CV-CV_Change
             ][,AvoidedLossPerc:=AvLoss(Mean=Mean,SD=SD,Change=CV_Change,Fixed=T),by=list(area,item)]
-  N<-match(
-    Stats[,paste(Country,Crop)],
-    CV_Data[,paste(area,SpamName)]
-  )
-  
-  Stats[,AvoidedLossPerc:=CV_Data[N,AvoidedLossPerc]
-          ][,Marginal_VOP_CIS:=(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor
-            ][,Marginal_VOP_Both:=Marginal_VOP_CIS+Marginal_VOP
-              ][is.na(Marginal_VOP_Both),Marginal_VOP_Both:=Marginal_VOP]
-  
-  CV_Data[,element:=NULL
-          ][,unit:=NULL
-            ][,item:=NULL]
   
   setnames(CV_Data,c("area","SpamName","Mean","SD"),c("Country","Crop","Yield_Mean","Yield_SD"))
   setcolorder(CV_Data,c("Country","Crop","N.Years","Yield_Mean","Yield_SD","CV","CVreduced","AvoidedLossPerc"))
   
+  CV_Data[,element:=NULL
+        ][,unit:=NULL
+          ][,item:=NULL]
+ 
+   N<-match(
+    Stats[,paste(Country,Crop)],
+    CV_Data[,paste(Country,Crop)]
+  )
+  
+  Stats[,AvoidedLossPerc:=abs(CV_Data[N,AvoidedLossPerc])
+          ][,VOP_CIS:=Price*Y_adopt*A_adopt*AvoidedLossPerc/100
+            ][,VOP_both:=VOP_CIS+VOP_adopt
+              ][is.na(VOP_both),VOP_both:=VOP_adopt]
+
+  
   return(list(Stats=Stats,CV_Data=CV_Data))
+}
+```
+
+Create wrapper function to calculate NPV and BCR:
+```{r Analysis - NPV & BCR wrapper,echo=F}
+InvestDataWrapper<-function(Data,InvestStatCrops,ProjectCost){
+  InvestData1<-Data[Crop %in% InvestStatCrops, list(Farming_System,Country,Crop,Ad.Rate, Pr.Inc, Project_benefits, VOP_CIS, Year, Total_adoption, AvoidedLossPerc)
+                    ][,Project_benefits_CIS:=Project_benefits+VOP_CIS
+                      ][,PB_disc:=Project_benefits/((1+DiscountRate())^Year)
+                        ][,PB_CIS_disc:=Project_benefits_CIS/((1+DiscountRate())^Year)
+                          ][,VOP_CIS:=NULL]
+
+
+InvestData<-melt(InvestData1,
+     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_adoption", "AvoidedLossPerc", "Project_benefits", "Project_benefits_CIS"),
+     variable.name = "CISinc",
+     value.name = "Cashflow_disc")[,Cashflow:=Project_benefits
+                         ][,Project_benefits:=NULL
+                           ][CISinc=="PB_CIS_disc",Cashflow:=Project_benefits_CIS
+                             ][,Project_benefits_CIS:=NULL
+                               ][CISinc=="PB_CIS_disc",CISinc:="Yes"
+                                 ][CISinc=="PB_disc",CISinc:="No"]
+  
+  NPV<-  InvestData[,list(Avoided_loss_mean=-mean(AvoidedLossPerc,na.rm=T)/100,
+                      Value=sum(Cashflow_disc,na.rm=T),
+                      Years=max(Year),
+                      Implied_Adoption=max(Total_adoption)
+                      ),by=list(Ad.Rate,Pr.Inc,CISinc)
+             ][,NPV:=Value-ProjectCost
+               ][,BCR:=NPV/ProjectCost
+                 ][,Value:=NULL]
+  
+  return(list(InvestData1=InvestData1,InvestData=InvestData,NPV=NPV))
 }
 ```
 
@@ -1546,8 +1594,8 @@ irr <- function(x, period = 1, starting.value = .1){
 Create wrapper function for IRR calculations:
 ```{r Analysis - IRR wrapper function,echo=T}
 irr_wrapper<-function(NPV,InvestData,ProjectCost){
-  X<-InvestData[,list(Value=sum(VOP,na.rm=T)),by=list(Ad.Rate,Pr.Inc,Year,NPVtype)]
-  Y<-X[,list(IRR=irr(c(-ProjectCost,Value),starting.value=0.1)),by=list(Ad.Rate,Pr.Inc,NPVtype)]
+  X<-InvestData[,list(Value=sum(Cashflow_disc,na.rm=T)),by=list(Ad.Rate,Pr.Inc,Year,CISinc)]
+  Y<-X[,list(IRR=irr(c(-ProjectCost,Value),starting.value=0.1)),by=list(Ad.Rate,Pr.Inc,CISinc)]
   return(data.table(NPV,IRR=as.numeric(Y[,IRR])))
 }
 ```
@@ -1730,8 +1778,24 @@ AnnIncSpill<-reactive({
 
 #### Marginal increase in value{.tabset .tabset-fade .tabset-pills}
 Each row in the table represents a commodity x farming system x country combination for different values of annual adoption rate and productivity increment.  
-Explanation of table headings: **`Area.ha`** = area (ha); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **`Year`** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD), **`Marginal_VOP`** = marginal value of adoption (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`,**`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`.  
-For more information on how `Total_Adoption` is calculated see the `MarginalInc` function found in the **Analysis::Data prep & analysis functions** tab.
+Explanation of table headings: 
+**`Area.ha`** = area of commodity (ha); 
+**`Ad.Rate`** = annual adoption rate (proportion); 
+**`Pr.Inc`** = productivity increment (proportion); 
+**`Y_non_adopt`** = mean yield of non-adopters (t/ha); 
+**`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; 
+**`Year`** = project year; 
+**`Price`** = 2005 commodity price (international USD/ton); 
+**`Cost_adopt`** = estimate of production cost per ha as `Price*Y_adopt/BCR of non-adopters`;
+**`Cost_non_adopt`** = estimate of production cost per ha as `Price*Y_non_adopt/BCR of non-adopters`;
+**`Total_adoption`** = total adoption of technology (proportion); 
+**`A_non_adopt`** = area of non-adopters as `Area*(1-Total_adoption)` (km2); 
+**`A_adopt`** = area of adopters (km2) as `Area*Total_adoption`; 
+**`VOP_non_adopt`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD) as `A_adopt*Y_adopt*Price`;
+**`NR_non_adopt`** = net return for non-adopters as `A_adopt*(Y_adopt*Price-Cost_adopt)`;
+**`NR_adopt`** = net return for adopters as `A_non_adopt*(Y_non_adopt*Price-Cost_non_adopt)`;
+**`Project_benefits`** = marginal value of adoption (international USD) as `NR_non_adopt+NR_adopt-NR_non_adopt_t0` where `NR_non_adopt_t0` is the net return of the system before any technology adoption has occurred.
+For more information on how `Total_adoption` is calculated see the `MarginalInc` function found in the **Analysis::Data prep & analysis functions** tab.
 
 ##### Core countries{.tabset .tabset-fade .tabset-pills}
 Here we modify the benefits from the previous tab for a range of adoption rates `r reactive({paste0("(",paste(100*Ad.Rates.Core(),collapse=", "),"%)")})` and productivity increments `r reactive({paste0("(",paste(100*Pr.Inc(),collapse=", "),"%)")})` at scale. Calculations are shown in the annex. The productivity increments used here should be within what has been observed in many situations for the technology being assessed. Regarding adoption rates, there are not many examples of agricultural technology adoption rates at scale in excess of 2% per year (see Thornton and Herrero, 2010, for example). The annual adoption rates used here refer to the total area of crop and/or number of cattle that have not yet adopted over a `r reactive({input$Years})` year period. So, for example, 2% adoption in year 8 is not the same number as 2% adoption in year 2. For this reason, the estimates of VOP addition are not simple linear multiples of the adoption rate per year shown.
@@ -1744,14 +1808,14 @@ MI.Core<-reactive({
           Pr.Inc=Pr.Inc(),
           Years=input$Years,
           Commodity=c(input$CropChoice,input$LSChoice),
-          CostFactor=input$CostFactor)
+          Non_BCR=input$Non_BCR)
 })
 
 ```
 
 ```{r Analysis - MI Core DT, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(MI.Core(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Core())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1768,16 +1832,18 @@ MI.Core.Total<-reactive({
   MI.Core()[Year==max(Year),list(Area.ha=sum(Area.ha,na.rm=T),
                   A_non_adopt=sum(A_non_adopt,na.rm=T),
                   A_adopt=sum(A_adopt,na.rm=T),
-                  VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                  VOP_non_adopt=sum(VOP_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
                   VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
-                  Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
-                  Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units)),by=list(Crop,Ad.Rate,Pr.Inc)]
+                  NR_non_adopt=sum(NR_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                  NR_adopt=sum(NR_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                  Project_benefits=sum(Project_benefits,na.rm=T)/as.numeric(input$USD_Units)),by=list(Crop,Ad.Rate,Pr.Inc)
+            ][,VOP_Total:=VOP_non_adopt+VOP_adopt]
             
 })
 
 
   renderDT({
-    datatable(dplyr::mutate_if(MI.Core.Total(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Core.Total())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1798,13 +1864,13 @@ MI.Spillover<-reactive({
                          Pr.Inc=Pr.Inc(),
                          Years=input$Years,
                          Commodity=c(input$CropChoice,input$LSChoice),
-                         CostFactor=input$CostFactor)
+                         Non_BCR=input$Non_BCR)
 })
 ```
 
 ```{r Analysis - MI Spillover DT, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(MI.Spillover(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Spillover())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1818,19 +1884,21 @@ MI.Spillover<-reactive({
 ```{r Analysis - MI Spillover DT No Countries, echo=F}
 
 MI.Spill.Total<-reactive({
-  Stats.Spillover()[Year==max(Year),list(Area.ha=sum(Area.ha,na.rm=T),
+  MI.Spillover()[Year==max(Year),list(Area.ha=sum(Area.ha,na.rm=T),
                   A_non_adopt=sum(A_non_adopt,na.rm=T),
                   A_adopt=sum(A_adopt,na.rm=T),
-                  VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                  VOP_non_adopt=sum(VOP_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
                   VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
-                  Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
-                  Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units)),by=list(Crop,Ad.Rate,Pr.Inc)]
+                  NR_non_adopt=sum(NR_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                  NR_adopt=sum(NR_adopt,na.rm=T)/as.numeric(input$USD_Units),
+                  Project_benefits=sum(Project_benefits,na.rm=T)/as.numeric(input$USD_Units)),by=list(Crop,Ad.Rate,Pr.Inc)
+            ][,VOP_Total:=VOP_non_adopt+VOP_adopt]
             
 })
 
 
   renderDT({
-    datatable(dplyr::mutate_if(MI.Spill.Total(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Spill.Total())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1867,8 +1935,7 @@ CV_Subset_Spill<-reactive({
 CoreCV<-reactive({
   AvLossWrapper(CV_Data=CV_Subset_Core(),
                 Stats=MI.Core(),
-                CV_Change=input$CV_Change,
-                CostFactor=input$CostFactor)
+                CV_Change=input$CV_Change)
 })
 
 ```
@@ -1889,7 +1956,26 @@ This table is derived from the FAOSTAT data presented in the **Datasets::FAO** t
 
 ###### Marginal VoP inc. Non-CIS + CIS
 Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
-Explanation of table headings: **`Area.ha`** = area (ha); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
+Explanation of table headings: 
+**`Area.ha`** = area of commodity (ha); 
+**`Ad.Rate`** = annual adoption rate (proportion); 
+**`Pr.Inc`** = productivity increment (proportion); 
+**`Y_non_adopt`** = mean yield of non-adopters (t/ha); 
+**`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; 
+**`Year`** = project year; 
+**`Price`** = 2005 commodity price (international USD/ton); 
+**`Cost_adopt`** = estimate of production cost per ha as `Price*Y_adopt/BCR of non-adopters`;
+**`Cost_non_adopt`** = estimate of production cost per ha as `Price*Y_non_adopt/BCR of non-adopters`;
+**`Total_adoption`** = total adoption of technology (proportion); 
+**`A_non_adopt`** = area of non-adopters as `Area*(1-Total_adoption)` (km2); 
+**`A_adopt`** = area of adopters (km2) as `Area*Total_adoption`; 
+**`VOP_non_adopt`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD) as `A_adopt*Y_adopt*Price`;
+**`NR_non_adopt`** = net return for non-adopters as `A_adopt*(Y_adopt*Price-Cost_adopt)`;
+**`NR_adopt`** = net return for adopters as `A_non_adopt*(Y_non_adopt*Price-Cost_non_adopt)`;
+**`Project_benefits`** = marginal value of adoption (international USD) as `NR_non_adopt+NR_adopt-NR_non_adopt_t0` where `NR_non_adopt_t0` is the net return of the system before any technology adoption has occurred;
+**`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); 
+**`VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `AvoidedLossPerc*Y_adopt*A_adopt*Price`;  
+**`VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Project_benefits+VOP_CIS`.
 
 ```{r Analysis -  Core avoided losses DT Stats, echo=F}
 renderDT({
@@ -1910,14 +1996,12 @@ CoreCVSummary<-reactive({
                  list(Area.ha=sum(Area.ha,na.rm=T),
                     A_non_adopt=sum(A_non_adopt,na.rm=T),
                     A_adopt=sum(A_adopt,na.rm=T),
-                    VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                    VOP_non_adopt=sum(VOP_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
                     VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
-                    Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
-                    Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units),
-                    Marginal_VOP_CIS=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
-                    Marginal_VOP_Both=sum(Marginal_VOP_Both,na.rm = T)/as.numeric(input$USD_Units)),
+                    VOP_CIS=sum(VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
+                    VOP_both=sum(VOP_both,na.rm = T)/as.numeric(input$USD_Units)),
                  by=list(Crop,Ad.Rate,Pr.Inc)
-                 ][,Ad.Rate:=as.character(Ad.Rate)]
+                 ][,Ad.Rate:=as.character(Ad.Rate)][,VOP_Total:=VOP_non_adopt+VOP_adopt]
             
 })
 
@@ -1937,8 +2021,7 @@ renderDT({
 SpilloverCV<-reactive({
   AvLossWrapper(CV_Data=CV_Subset_Spill(),
                 Stats=MI.Spillover(),
-                CV_Change=input$CV_Change,
-                CostFactor=input$CostFactor)
+                CV_Change=input$CV_Change)
 })
 
 ```
@@ -1959,7 +2042,26 @@ This table is derived from the FAO data presented in the **Datasets::FAO** tab. 
 
 ###### Marginal VoP inc. Non-CIS + CIS
 Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
-Explanation of table headings: **`Area.ha`** = area (ha); **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Y_non_adopt`** = mean yield of non-adopters (t/ha); **`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; **Year** = project year; **`Price`** = 2005 commodity price (international USD/ton); **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`A_non_adopt`** = area of non-adopters as `Area*(1-Total_Adoption)` (km2); **`A_adopt`** = area of adopters (km2) as `Area*Total_Adoption`; **`VOP_non`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD); **`Marginal_VOP`** = marginal value of adoption of non-CIS technologies (international USD) as `VOP_adopt*(Y_adopt-Y_non_adopt)/CostFactor`; **`Total_VOP`** = total value of production (international USD) as `VOP_non+VOP_adopt`; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`Marginal_VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `(((100-AvoidedLossPerc)/100)*Y_adopt*A_adopt*Price-VOP_adopt)/CostFactor`;  **`Marginal_VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Marginal_VOP+Marginal_VOP_CIS`.
+Explanation of table headings: 
+**`Area.ha`** = area of commodity (ha); 
+**`Ad.Rate`** = annual adoption rate (proportion); 
+**`Pr.Inc`** = productivity increment (proportion); 
+**`Y_non_adopt`** = mean yield of non-adopters (t/ha); 
+**`Y_adopt`** = mean yield of adopters (t/ha) as `Y_non_adopt*(1+Pr.Inc)`; 
+**`Year`** = project year; 
+**`Price`** = 2005 commodity price (international USD/ton); 
+**`Cost_adopt`** = estimate of production cost per ha as `Price*Y_adopt/BCR of non-adopters`;
+**`Cost_non_adopt`** = estimate of production cost per ha as `Price*Y_non_adopt/BCR of non-adopters`;
+**`Total_adoption`** = total adoption of technology for given `Year` (proportion); 
+**`A_non_adopt`** = area of non-adopters as `Area*(1-Total_adoption)` (km2); 
+**`A_adopt`** = area of adopters (km2) as `Area*Total_adoption`; 
+**`VOP_non_adopt`** = total value of production for non-adopters (international USD) as `A_non_adopt*Y_non_adopt*Price`; **`VOP_adopt`** = total value of production for adopters (international USD) as `A_adopt*Y_adopt*Price`;
+**`NR_non_adopt`** = net return for non-adopters as `A_adopt*(Y_adopt*Price-Cost_adopt)`;
+**`NR_adopt`** = net return for adopters as `A_non_adopt*(Y_non_adopt*Price-Cost_non_adopt)`;
+**`Project_benefits`** = marginal value of adoption (international USD) as `NR_non_adopt+NR_adopt-NR_non_adopt_t0` where `NR_non_adopt_t0` is the net return of the system before any technology adoption has occurred;
+**`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); 
+**`VOP_CIS`**  marginal value of adoption of CIS technologies (international USD) as `AvoidedLossPerc*Y_adopt*A_adopt*Price`;  
+**`VOP_Both`** combined value of non-CIS and CIS technologies adoption as `Project_benefits+VOP_CIS`.
 ```{r Analysis -  Spillover avoided losses DT Stats, echo=F}
 renderDT({
   datatable(dplyr::mutate_if(SpilloverCV()$Stats[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
@@ -1979,14 +2081,13 @@ SpillCVSummary<-reactive({
                       list(Area.ha=sum(Area.ha,na.rm=T),
                         A_non_adopt=sum(A_non_adopt,na.rm=T),
                         A_adopt=sum(A_adopt,na.rm=T),
-                        VOP_non=sum(VOP_non,na.rm=T)/as.numeric(input$USD_Units),
+                        VOP_non_adopt=sum(VOP_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
                         VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
-                        Marginal_VOP=sum(Marginal_VOP,na.rm=T)/as.numeric(input$USD_Units),
-                        Total_VOP=sum(Total_VOP,na.rm=T)/as.numeric(input$USD_Units),
-                        Marginal_VOP_CIS=sum(Marginal_VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
-                        Marginal_VOP_Both=sum(Marginal_VOP_Both,na.rm = T)/as.numeric(input$USD_Units)), 
+                        VOP=sum(VOP,na.rm=T)/as.numeric(input$USD_Units),
+                        VOP_CIS=sum(VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
+                        VOP_Both=sum(VOP_Both,na.rm = T)/as.numeric(input$USD_Units)), 
                       by=list(Crop,Ad.Rate,Pr.Inc)
-                  ][,Ad.Rate:=as.character(Ad.Rate)]
+                  ][,Ad.Rate:=as.character(Ad.Rate)][,VOP_Total:=VOP_non_adopt+VOP_adopt]
             
 })
 
@@ -2021,33 +2122,35 @@ checkboxGroupInput(inputId="InvestStatCrops",
 
 Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
 
-Explanation of table headings: **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`Year`** = project year; **`Total_Adoption`** = total adoption of technology for given `Year` (proportion); **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); **`NPVtype`**  indicates if NPV and VOP is calculated for both CIS and non-CIS technology adoption (`NPVboth`) or non-CIS technologies only (`NPVnoncis`);  **`NPV`** net-present value (international USD) as `VOP    /(1+DiscountRate)^Year`; **`VOP`** = marginal value of adoption (international USD) as calculated in previous tabs. The discount rate used in calculations is `r reactive({100*DiscountRate()})`%.
+Explanation of table headings: 
+**`Ad.Rate`** = annual adoption rate (proportion); 
+**`Pr.Inc`** = productivity increment (proportion); 
+**`Year`** = project year; 
+**`Total_adoption`** = total adoption of technology (proportion); 
+**`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); 
+**`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not;  
+**`Cashflow_disc`** discounted marginal value of adoption (international USD) as `Cashflow/(1+DiscountRate)^Year`; 
+**`Cashflow`** = marginal value of adoption (international USD) as calculated in previous tabs  (see `Project_benefits` columns).  
+The discount rate used in calculations is `r reactive({100*DiscountRate()})`%.
 
 ###### Core only
 *Investment indicators calculated only considering core countries*
 ```{r Analysis - NPV Calc 1 Core,echo=F}
-InvestData1<-reactive({
-  CoreCV()$Stats[Crop %in% input$InvestStatCrops, list(Farming_System,Country,Crop,Ad.Rate, Pr.Inc, Marginal_VOP_Both, Marginal_VOP, Year, Total_Adoption, AvoidedLossPerc)
-                    ][,NPVboth:=Marginal_VOP_Both/(1+DiscountRate())^Year
-                      ][,NPVnoncis:=Marginal_VOP/(1+DiscountRate())^Year]
+
+InvestDataCore<-reactive({
+  InvestDataWrapper(Data=CoreCV()$Stats,
+                                  InvestStatCrops=input$InvestStatCrops,
+                                  ProjectCost=ProjectCost())
 })
 
-InvestData<-reactive({
-  melt(InvestData1(),
-     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_Adoption", "AvoidedLossPerc", "Marginal_VOP_Both", "Marginal_VOP"),
-     variable.name = "NPVtype",
-     value.name = "NPV")[,VOP:=Marginal_VOP
-                         ][,Marginal_VOP:=NULL
-                           ][NPVtype=="NPVboth",VOP:=Marginal_VOP_Both
-                             ][,Marginal_VOP_Both:=NULL]
-})
+
 ```
 
 ```{r Analysis - NPV Calc 1 DT Core, echo=F}
 
   renderDT({
-    datatable(dplyr::mutate_if(InvestData()[,NPV:=NPV/as.numeric(input$USD_Units)
-                                               ][,VOP:=VOP/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(InvestDataCore()$InvestData[,Cashflow_disc:=Cashflow_disc/as.numeric(input$USD_Units)
+                                               ][,Cashflow:=Cashflow/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2057,46 +2160,22 @@ InvestData<-reactive({
   })
 ```
 
-```{r Analysis - NPV Calc 2 Core,echo=F}
-
-NPV<-reactive({
-  InvestData()[,list(Avoided_loss_mean=-mean(AvoidedLossPerc,na.rm=T)/100,
-                      Value=sum(NPV,na.rm=T),
-                      Years=max(Year),
-                      Implied_Adoption=max(Total_Adoption)
-                      ),by=list(Ad.Rate,Pr.Inc,NPVtype)
-             ][,NPV:=Value-ProjectCost()
-               ][,BCR:=NPV/ProjectCost()
-                 ][,Value:=NULL]
-})
-
-```
-
 ###### Core + Spillover
 *Investment indicators calculated considering both core and spillover countries*
 ```{r Analysis - NPV Calc 1,echo=F}
-InvestData1_CS<-reactive({
-  rbind(CoreCV()$Stats,SpilloverCV()$Stats)[Crop %in% input$InvestStatCrops, list(Farming_System,Country,Crop,Ad.Rate, Pr.Inc, Marginal_VOP_Both, Marginal_VOP, Year, Total_Adoption, AvoidedLossPerc)
-                    ][,NPVboth:=Marginal_VOP_Both/(1+DiscountRate())^Year
-                      ][,NPVnoncis:=Marginal_VOP/(1+DiscountRate())^Year]
-})
 
-InvestData_CS<-reactive({
-  melt(InvestData1_CS(),
-     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_Adoption", "AvoidedLossPerc", "Marginal_VOP_Both", "Marginal_VOP"),
-     variable.name = "NPVtype",
-     value.name = "NPV")[,VOP:=Marginal_VOP
-                         ][,Marginal_VOP:=NULL
-                           ][NPVtype=="NPVboth",VOP:=Marginal_VOP_Both
-                             ][,Marginal_VOP_Both:=NULL]
+InvestDataCS<-reactive({
+  InvestDataWrapper(Data= rbind(CoreCV()$Stats,SpilloverCV()$Stats),
+                    InvestStatCrops=input$InvestStatCrops,
+                    ProjectCost=ProjectCost())
 })
 ```
 
 ```{r Analysis - NPV Calc 1 DT, echo=F}
 
   renderDT({
-    datatable(dplyr::mutate_if(InvestData_CS()[,NPV:=NPV/as.numeric(input$USD_Units)
-                                               ][,VOP:=VOP/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(InvestDataCS()$InvestData[,Cashflow_disc:=Cashflow_disc/as.numeric(input$USD_Units)
+                                               ][,Cashflow:=Cashflow/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2106,24 +2185,18 @@ InvestData_CS<-reactive({
   })
 ```
 
-```{r Analysis - NPV Calc 2,echo=F}
-
-NPV_CS<-reactive({
-  InvestData_CS()[,list(Avoided_loss_mean=mean(AvoidedLossPerc,na.rm=T),
-                      Value=sum(NPV,na.rm=T),
-                      Years=max(Year),
-                      Implied_Adoption=100*max(Total_Adoption)
-                      ),by=list(Ad.Rate,Pr.Inc,NPVtype)
-             ][,NPV:=Value-ProjectCost()
-               ][,BCR:=NPV/ProjectCost()
-                 ][,Value:=NULL]
-})
-
-```
-
-
 ##### Indicators {.tabset .tabset-fade .tabset-pills}
-Each row in the table presents NPV, BCR and IRR investment indicators for each combination of annual adoption rate and productivity increment. Explanation of table headings: **`Ad.Rate`** = annual adoption rate (proportion); **`Pr.Inc`** = productivity increment (proportion); **`NPVtype`**  indicates if NPV and VOP is calculated for both CIS and non-CIS technology adoption (`NPVboth`) or non-CIS technologies only (`NPVnoncis`);**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (%), the mean is calculated across all farming system x crop x country combinations; **`Years`** = Project duration; **`Implied Adoption`** = total assumed adoption of technologies in core countries; **`NPV`** net-present value (international USD); **`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; **`IRR`** = internal rate of return (see the `irr` function in **Analysis::Data prep & analysis functions** tab for methodological details).
+Each row in the table presents NPV, BCR and IRR investment indicators for each combination of annual adoption rate and productivity increment. 
+Explanation of table headings: 
+**`Ad.Rate`** = annual adoption rate (proportion); 
+**`Pr.Inc`** = productivity increment (proportion); 
+**`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not; 
+**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (proportion), the mean is calculated across all farming system x crop x country combinations; 
+**`Years`** = Project duration; 
+**`Implied Adoption`** = total assumed adoption of technologies in core countries; 
+**`NPV`** net-present value (international USD); 
+**`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; 
+**`IRR`** = internal rate of return (see the `irr` function in **Analysis::Data prep & analysis functions** tab for methodological details).
 
 The discount rate used in NPV calculations is `r reactive({100*DiscountRate()})`% and the project cost is `r reactive({ProjectCost()/10^6})` million USD.
 
@@ -2132,18 +2205,19 @@ The discount rate used in NPV calculations is `r reactive({100*DiscountRate()})`
 ```{r Analysis - IRR Calc Core,echo=F}
 
 InvestStats_IRR<-reactive({
-  irr_wrapper(NPV=NPV(),
-              InvestData=InvestData(),
+  irr_wrapper(NPV=InvestDataCore()$NPV,
+              InvestData=InvestDataCore()$InvestData,
               ProjectCost=ProjectCost())
 })
 ```
 
 ```{r Analysis - IRR Calc DT Core, echo=F}
   renderDT({
-    datatable(data.table::copy(InvestStats_IRR())[,NPV:=NPV/as.numeric(input$USD_Units)
+    datatable(data.table::copy(InvestStats_IRR())[,NPV:=round(NPV/as.numeric(input$USD_Units),3)
                                                   ][,BCR:=round(BCR,3)
                                                   ][,IRR:=round(IRR,3)
-                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)],
+                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)
+                                                      ][,Avoided_loss_mean:=abs(round(Avoided_loss_mean,3))],
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2166,10 +2240,11 @@ InvestStats_IRRspill<-reactive({
 
 ```{r Analysis - IRR Calc DT Spillover, echo=F}
   renderDT({
-    datatable(data.table::copy(InvestStats_IRRspill())[,NPV:=NPV/as.numeric(input$USD_Units)
+    datatable(data.table::copy(InvestStats_IRRspill())[,NPV:=round(NPV/as.numeric(input$USD_Units),3)
                                                   ][,BCR:=round(BCR,3)
-                                                    ][,IRR:=round(IRR,3)
-                                                      ][,Implied_Adoption:=round(Implied_Adoption,3)],
+                                                  ][,IRR:=round(IRR,3)
+                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)
+                                                      ][,Avoided_loss_mean:=abs(round(Avoided_loss_mean,3))],
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
