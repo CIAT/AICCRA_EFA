@@ -25,6 +25,7 @@ required.packages <- c("colourpicker",
                        "data.table",
                        "dplyr",
                        "DT",
+                       "jrvFinance",
                        "raster",
                        "rgdal",
                        "terra",
@@ -1264,6 +1265,19 @@ DiscountRate<-reactive({input$DiscountRate1/100})
 ```
 :::
 :::{}
+*The year that returns begin after investment?* 
+```{r Parameter - StartPeriod,echo=F}
+  selectInput(inputId="StartYear", 
+              label="Return start year",
+              choices = c(0,1,2),
+              selected=1, 
+              multiple = F,
+              width="300px")
+
+StartYear<-reactive({as.numeric(input$StartYear)})
+```
+:::
+:::{}
 *The cost of the project (million USD)*
 ```{r Parameter - Project Cost,echo=F}
   numericInput(inputId="ProjectCost1", 
@@ -1277,15 +1291,65 @@ DiscountRate<-reactive({input$DiscountRate1/100})
 ProjectCost<-reactive({input$ProjectCost1*10^6})
 ```
 :::
-:::{}
-*Unit of display for USD in tables*
-```{r Parameter - Annual increment - units,echo=F}
+::::
+
+:::: {style="display: flex;"}
+::: {}
+```{r Parameter - Value units,echo=F}
 selectInput(inputId="USD_Units", 
             label="Divide USD by:",
             choices = c(1,10,100,1000,10000,100000,1000000), 
             selected = 1,
             multiple = F,
-            width="250px")
+            width="150px")
+
+```
+:::
+:::{}
+```{r Parameter - Area units,echo=F}
+selectInput(inputId="Area_Name", 
+            label="Area unit:",
+            choices = c("ha","km2","10km2","100km2"), 
+            selected = 1,
+            multiple = F,
+            width="150px")
+
+Area_Unit<-reactive({
+  if(input$Area_Name=="ha"){
+    1
+  }else{
+  if(input$Area_Name=="km2"){
+    100
+  }else{
+  if(input$Area_Name=="10km2"){
+   1000
+  }else{
+  if(input$Area_Name=="100km2"){
+  10000
+}}}}
+})
+
+```
+:::
+:::{}
+```{r Parameter - Population units,echo=F}
+selectInput(inputId="Pop_Unit", 
+            label="Divide population by:",
+            choices = c(1,10,100,1000,10000,100000,1000000), 
+            selected = 1,
+            multiple = F,
+            width="170px")
+
+```
+:::
+:::{}
+```{r Parameter - Production units,echo=F}
+selectInput(inputId="Prod_Unit", 
+            label="Divide production (t) by:",
+            choices = c(1,10,100,1000,10000,100000,1000000), 
+            selected = 1,
+            multiple = F,
+            width="170px")
 
 ```
 :::
@@ -1528,80 +1592,75 @@ AvLossWrapper<-function(CV_Data,Stats,CV_Change){
 }
 ```
 
+Create NPV function
+```{r Analysis - NPV function, echo=T}
+NPVfun<-function(ProjectCost,StartPeriod,DiscountRate,Values,ReturnSum){
+  if(!all(is.na(Values))){
+  if(StartPeriod==0){
+    Values[1]<-Values[1]-ProjectCost
+  }else{
+    Values<-c(-ProjectCost,rep(0,StartPeriod-1),Values)
+  }
+  
+  Times<-1:length(Values)
+  
+  NPV<-Values/(1+DiscountRate)^Times
+  
+  if(ReturnSum){
+    NPV<-sum(NPV)
+  }
+  }else{
+    NPV<-NA
+  }
+  
+  return(NPV)
+  
+}
+
+```
+
 Create wrapper function to calculate NPV and BCR:
 ```{r Analysis - NPV & BCR wrapper,echo=F}
-InvestDataWrapper<-function(Data,InvestStatCrops,ProjectCost){
+# Note that irr function throws a wobbly if Startdiff is >2
+InvestDataWrapper<-function(Data,InvestStatCrops,ProjectCost,DiscountRate,StartPeriod){
   InvestData1<-Data[Crop %in% InvestStatCrops, list(Farming_System,Country,Crop,Ad.Rate, Pr.Inc, Project_benefits, VOP_CIS, Year, Total_adoption, AvoidedLossPerc)
                     ][,Project_benefits_CIS:=Project_benefits+VOP_CIS
-                      ][,PB_disc:=Project_benefits/((1+DiscountRate())^Year)
-                        ][,PB_CIS_disc:=Project_benefits_CIS/((1+DiscountRate())^Year)
-                          ][,VOP_CIS:=NULL]
-
+                      ][,VOP_CIS:=NULL]
 
 InvestData<-melt(InvestData1,
-     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_adoption", "AvoidedLossPerc", "Project_benefits", "Project_benefits_CIS"),
+     id.vars = c("Farming_System","Country","Crop","Ad.Rate", "Pr.Inc", "Year", "Total_adoption", "AvoidedLossPerc"),
      variable.name = "CISinc",
-     value.name = "Cashflow_disc")[,Cashflow:=Project_benefits
-                         ][,Project_benefits:=NULL
-                           ][CISinc=="PB_CIS_disc",Cashflow:=Project_benefits_CIS
-                             ][,Project_benefits_CIS:=NULL
-                               ][CISinc=="PB_CIS_disc",CISinc:="Yes"
-                                 ][CISinc=="PB_disc",CISinc:="No"]
-  
-  NPV<-  InvestData[,list(Avoided_loss_mean=-mean(AvoidedLossPerc,na.rm=T)/100,
-                      Value=sum(Cashflow_disc,na.rm=T),
-                      Years=max(Year),
-                      Implied_Adoption=max(Total_adoption)
-                      ),by=list(Ad.Rate,Pr.Inc,CISinc)
-             ][,NPV:=Value-ProjectCost
-               ][,BCR:=NPV/ProjectCost
-                 ][,Value:=NULL]
-  
-  return(list(InvestData1=InvestData1,InvestData=InvestData,NPV=NPV))
-}
-```
+     value.name = "Cashflow")[CISinc=="Project_benefits_CIS",CISinc:="Yes"
+                                 ][CISinc=="Project_benefits",CISinc:="No"]
 
-Create function to calculate Internal Rate of Return (IRR):
-```{r Analysis - IRR function,echo=T}
-irr <- function(x, period = 1, starting.value = .1){
+  Indicators<-  InvestData[,list(Cashflow=sum(Cashflow,na.rm = T),
+                                   Implied_Adoption=max(Total_adoption,na.rm=T)*100,
+                                   Avoided_loss_mean=mean(AvoidedLossPerc,na.rm=T)),
+                             by=list(Year,Ad.Rate,Pr.Inc,CISinc,Total_adoption)
+                         ][,list(Periods=max(Year)+StartPeriod,
+                                 StartPeriod=StartPeriod,
+                                 Implied_Adoption=max(Implied_Adoption),
+                                 Avoided_loss_mean=mean(Avoided_loss_mean),
+                                 NPV=NPVfun(ProjectCost=ProjectCost,
+                                          StartPeriod=StartPeriod,
+                                          DiscountRate=DiscountRate,
+                                          Values=Cashflow,
+                                          ReturnSum=T),
+                                 IRR=jrvFinance::irr(
+                                   if(StartPeriod>0){
+                                     c(-ProjectCost,rep(0,StartPeriod-1),Cashflow)
+                                   }else{
+                                     abs(Cashflow+c(-ProjectCost,rep(0,(.N-1))))
+                                     })),
+                           by=list(Ad.Rate,Pr.Inc,CISinc)][,BCR:=NPV/abs(ProjectCost)][,IRR:=as.numeric(IRR)*100]
 
-  ### This should detect the number of sign changes.  Should correctly not warn if there are many negative cash flows (so long as there is only 1 change in sign).
 
-  irr.func <- function(r){ ( sum(x / (1 + r)^{0:(length(x)-1)}) )^2 }
-  result <- optim(par = starting.value, fn = irr.func, method = "Brent", lower = -1000000, upper = 1000000)
-
-  ## detecting number of sign changes
-  x.ge.0 <- 1 * (x >= 0)
-  changes <- diff(x.ge.0)
-  changes <- changes * changes
-  num.changes <- sum(changes)
-
-  if( num.changes > 1) {
-
-    statement <- "Your cash flows change more than once -- so you may have multiple IRRs. This function will only return the first IRR it finds. To find the others, you can try different starting values.  However, note the IRR does not make sense if the signs change more than once (try Modified IRR or NPV)."
-    value <- period * result$par
-    return(list(beware = statement, IRR = value))
-
-  } else {
-
-    return(list(IRR = period * result$par))
-
-  }
-}
-```
-*The above function is adapted from [this stackoverflow post](https://stackoverflow.com/questions/29781785/computing-irr-using-optim)*
-
-Create wrapper function for IRR calculations:
-```{r Analysis - IRR wrapper function,echo=T}
-irr_wrapper<-function(NPV,InvestData,ProjectCost){
-  X<-InvestData[,list(Value=sum(Cashflow_disc,na.rm=T)),by=list(Ad.Rate,Pr.Inc,Year,CISinc)]
-  Y<-X[,list(IRR=irr(c(-ProjectCost,Value),starting.value=0.1)),by=list(Ad.Rate,Pr.Inc,CISinc)]
-  return(data.table(NPV,IRR=as.numeric(Y[,IRR])))
+  return(list(InvestData1=InvestData1,InvestData=InvestData,Indicators=Indicators))
 }
 ```
 
 #### Data extraction{.tabset .tabset-fade .tabset-pills}
-Each row in the extracted data tables represents a farming system within a country. Explanation of table headings: **`Area.ha`** = area (ha); **`Hpop`** = human population; **`RainCV.ln`** = natural log of mean rainfall CV; suffix **`vop`** = commodity value of production (international USD); suffix **`area`** = commodity area of production (km2); suffix **`yield`** = commodity yield (ton/ha); suffix **price** = 2005 commodity price (international USD/ton).
+Each row in the extracted data tables represents a farming system within a country. Explanation of table headings: **`Area.ha`** = area (ha); **`Hpop`** = human population; **`RainCV.ln`** = natural log of mean rainfall CV; suffix **`vop`** = commodity value of production (international USD); suffix **`area`** = commodity area of production (km2); suffix **`yield`** = commodity yield (ton/ha); suffix **`price`** = 2005 commodity price (international USD/ton).
 
 ##### Core countries{.tabset .tabset-fade .tabset-pills}
 ```{r Extraction - Core countries,echo=F}
@@ -1646,8 +1705,30 @@ CoreAreas<-reactive({
 
 ###### Extraction
 ```{r Extraction - Core countries DT, echo=F}
+
+FormatExtraction<-function(Data,vop_cols,area_cols,prod_cols,USD_Units,Area_Unit,Prod_Unit,Pop_Unit,Area_Name){
+  Data[,(vop_cols):=.SD/USD_Units,.SDcols=vop_cols]
+  Data[,(area_cols):=.SD/Area_Unit,.SDcols=area_cols]
+  Data[,(prod_cols):=.SD/Prod_Unit,.SDcols=prod_cols]
+  Data[,Hpop:=Hpop/Pop_Unit]
+  colnames(Data)[colnames(Data)=="Area.ha"]<-gsub("ha",Area_Name,"Area.ha")
+  return(Data)
+}
+
+Stats.Core.Disp<-reactive({
+  FormatExtraction(Data=data.table::copy(Stats.Core()),
+                 vop_cols=vop_cols(),
+                 area_cols=area_cols(),
+                 prod_cols=prod_cols(),
+                 USD_Units=as.numeric(input$USD_Units),
+                 Area_Unit=as.numeric(Area_Unit()),
+                 Prod_Unit=as.numeric(input$Prod_Unit),
+                 Pop_Unit=as.numeric(input$Pop_Unit),
+                 Area_Name=input$Area_Name)
+})
+
   renderDT({
-    datatable(dplyr::mutate_if(Stats.Core(),is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(Stats.Core.Disp(),is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1702,8 +1783,22 @@ CoreAreasSpill<-reactive({
 
 ###### Farming System Areas
 ```{r Extraction - Spillover countries FS Area DT, echo=F}
+
+Stats.Spill.Disp<-reactive({
+  FormatExtraction(Data=data.table::copy(CoreAreasSpill()),
+                 vop_cols=vop_cols(),
+                 area_cols=area_cols(),
+                 prod_cols=prod_cols(),
+                 USD_Units=as.numeric(input$USD_Units),
+                 Area_Unit=as.numeric(Area_Unit()),
+                 Prod_Unit=as.numeric(input$Prod_Unit),
+                 Pop_Unit=as.numeric(input$Pop_Unit),
+                 Area_Name=input$Area_Name)
+})
+
+
   renderDT({
-    datatable(CoreAreasSpill(),
+    datatable(Stats.Spill.Disp(),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2105,7 +2200,7 @@ renderDT({
 #### Investment indicators  {.tabset .tabset-fade .tabset-pills}
 The information presented in the previous tabs illustrates estimated changes in the value of production of different commodities for different production increments and adoption rates. To estimate returns on investment, some estimate is needed of the direct costs of implementing non-CIS and CIS technologies at the farm level, so that cash flows can be calculated on changes in net profits or grow margins per ha or per animal.
 
-The tabs below show the Net Present Value (NPV), Internal Rate of Return (IRR) and Benefit-Cost Ratio (BCR) for the selected ranges of adoption rates and yield increments, with the assumptions that the investment is allocated to the indicator crop (ADD CROP), and that the marginal VOP additions each year from non-CIS and CIS adoption are adjusted by a factor of `r reactive({input$CostFactor})` to account for the increased costs of implementation at the farm level (as above) plus the essentially unknown off-farm costs (increased market access, improved seed production, etc).
+Each row in the Indicator tab shows the Net Present Value (NPV), Internal Rate of Return (IRR) and Benefit-Cost Ratio (BCR) for the selected ranges of adoption rates and yield increments, with the assumptions that the investment is allocated to the indicator crop (ADD CROP), and that the marginal VOP additions each year from non-CIS and CIS adoption are adjusted by a factor of `r reactive({input$CostFactor})` to account for the increased costs of implementation at the farm level (as above) plus the essentially unknown off-farm costs (increased market access, improved seed production, etc).
 
 **Choose Crops**
 ```{r Analysis - Choose crops}
@@ -2118,7 +2213,80 @@ checkboxGroupInput(inputId="InvestStatCrops",
 })
 ```
 
-##### NPV Calculations {.tabset .tabset-fade .tabset-pills}
+Explanation of Investment tab headings: 
+**`Ad.Rate`** = annual adoption rate (proportion); 
+**`Pr.Inc`** = productivity increment (proportion); 
+**`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not; 
+**`Periods`** = project duration (years); 
+**`StartPeriod`** = the period (year) in which returns start; 
+**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (proportion), the mean is calculated across all farming system x crop x country combinations; 
+**`Implied Adoption`** = total assumed adoption of technologies in core countries; 
+**`NPV`** net-present value (international USD); 
+**`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; 
+**`IRR`** = internal rate of return (see the `irr` function in **Analysis::Data prep & analysis functions** tab for methodological details).
+
+```{r Analysis - NPV Calc 1 Core,echo=F}
+
+InvestDataCore<-reactive({
+  InvestDataWrapper(Data=CoreCV()$Stats,
+                    InvestStatCrops=input$InvestStatCrops,
+                    ProjectCost=ProjectCost(),
+                    DiscountRate=DiscountRate(),
+                    StartPeriod=StartYear())
+})
+
+
+```
+
+```{r Analysis - NPV Calc 1,echo=F}
+InvestDataCS<-reactive({
+  InvestDataWrapper(Data= rbind(CoreCV()$Stats,data.table::copy(SpilloverCV()$Stats)[,Ad.Rate:=Ad.Rate*(100/input$SpillFactor)]),
+                    InvestStatCrops=input$InvestStatCrops,
+                    ProjectCost=ProjectCost(),
+                    DiscountRate=DiscountRate(),
+                    StartPeriod=StartYear())
+})
+```
+
+##### Indicators
+The discount rate used in NPV calculations is `r reactive({100*DiscountRate()})`% and the project cost is `r reactive({ProjectCost()/10^6})` million USD.
+
+**Calculated only considering core countries**
+```{r Analysis - Indicators Core DT, echo=F}
+  renderDT({
+    datatable(InvestDataCore()$Indicators[,NPV:=round(NPV/as.numeric(input$USD_Units),3)
+                                                  ][,BCR:=round(BCR,3)
+                                                  ][,IRR:=round(IRR,3)
+                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)
+                                                      ][,Avoided_loss_mean:=abs(round(Avoided_loss_mean,3))],
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+**Calculated considering both core and spillover countries.** *Note that implied adoption only consider adoption in core countries, in spillover countries adoption is assumed to be `r reactive({input$SpillFactor})` `%` of that in core countries.*
+
+```{r Analysis - Indicators Core + Spillover DT, echo=F}
+  renderDT({
+    datatable(InvestDataCS()$Indicators[,NPV:=round(NPV/as.numeric(input$USD_Units),3)
+                                                  ][,BCR:=round(BCR,3)
+                                                  ][,IRR:=round(IRR,3)
+                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)
+                                                      ][,Avoided_loss_mean:=abs(round(Avoided_loss_mean,3))],
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
+##### Cashflow {.tabset .tabset-fade .tabset-pills}
 
 Each row in the table represents a commodity x farming system x country x project year combination for different values of annual adoption rate and productivity increment.  
 
@@ -2128,29 +2296,15 @@ Explanation of table headings:
 **`Year`** = project year; 
 **`Total_adoption`** = total adoption of technology (proportion); 
 **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%); 
-**`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not;  
-**`Cashflow_disc`** discounted marginal value of adoption (international USD) as `Cashflow/(1+DiscountRate)^Year`; 
+**`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not; 
 **`Cashflow`** = marginal value of adoption (international USD) as calculated in previous tabs  (see `Project_benefits` columns).  
 The discount rate used in calculations is `r reactive({100*DiscountRate()})`%.
 
 ###### Core only
-*Investment indicators calculated only considering core countries*
-```{r Analysis - NPV Calc 1 Core,echo=F}
-
-InvestDataCore<-reactive({
-  InvestDataWrapper(Data=CoreCV()$Stats,
-                                  InvestStatCrops=input$InvestStatCrops,
-                                  ProjectCost=ProjectCost())
-})
-
-
-```
-
 ```{r Analysis - NPV Calc 1 DT Core, echo=F}
 
   renderDT({
-    datatable(dplyr::mutate_if(InvestDataCore()$InvestData[,Cashflow_disc:=Cashflow_disc/as.numeric(input$USD_Units)
-                                               ][,Cashflow:=Cashflow/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(InvestDataCore()$InvestData,is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -2161,90 +2315,11 @@ InvestDataCore<-reactive({
 ```
 
 ###### Core + Spillover
-*Investment indicators calculated considering both core and spillover countries*
-```{r Analysis - NPV Calc 1,echo=F}
-
-InvestDataCS<-reactive({
-  InvestDataWrapper(Data= rbind(CoreCV()$Stats,SpilloverCV()$Stats),
-                    InvestStatCrops=input$InvestStatCrops,
-                    ProjectCost=ProjectCost())
-})
-```
-
+*Note that the display of the annual adoption rate `Ad.Rate` for spillover countries is not adjusted by the spillover factor, but the analysis does take this into account.*
 ```{r Analysis - NPV Calc 1 DT, echo=F}
 
   renderDT({
-    datatable(dplyr::mutate_if(InvestDataCS()$InvestData[,Cashflow_disc:=Cashflow_disc/as.numeric(input$USD_Units)
-                                               ][,Cashflow:=Cashflow/as.numeric(input$USD_Units)],is.numeric,~round(.,3)),
-                caption="",
-                extensions = 'Buttons',
-                filter = "top",
-                options = list(dom = 'Blfrtip',
-                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
-  })
-```
-
-##### Indicators {.tabset .tabset-fade .tabset-pills}
-Each row in the table presents NPV, BCR and IRR investment indicators for each combination of annual adoption rate and productivity increment. 
-Explanation of table headings: 
-**`Ad.Rate`** = annual adoption rate (proportion); 
-**`Pr.Inc`** = productivity increment (proportion); 
-**`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not; 
-**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (proportion), the mean is calculated across all farming system x crop x country combinations; 
-**`Years`** = Project duration; 
-**`Implied Adoption`** = total assumed adoption of technologies in core countries; 
-**`NPV`** net-present value (international USD); 
-**`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; 
-**`IRR`** = internal rate of return (see the `irr` function in **Analysis::Data prep & analysis functions** tab for methodological details).
-
-The discount rate used in NPV calculations is `r reactive({100*DiscountRate()})`% and the project cost is `r reactive({ProjectCost()/10^6})` million USD.
-
-###### Core only
-*Investment indicators calculated only considering core countries*
-```{r Analysis - IRR Calc Core,echo=F}
-
-InvestStats_IRR<-reactive({
-  irr_wrapper(NPV=InvestDataCore()$NPV,
-              InvestData=InvestDataCore()$InvestData,
-              ProjectCost=ProjectCost())
-})
-```
-
-```{r Analysis - IRR Calc DT Core, echo=F}
-  renderDT({
-    datatable(data.table::copy(InvestStats_IRR())[,NPV:=round(NPV/as.numeric(input$USD_Units),3)
-                                                  ][,BCR:=round(BCR,3)
-                                                  ][,IRR:=round(IRR,3)
-                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)
-                                                      ][,Avoided_loss_mean:=abs(round(Avoided_loss_mean,3))],
-                caption="",
-                extensions = 'Buttons',
-                filter = "top",
-                options = list(dom = 'Blfrtip',
-                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
-  })
-```
-
-###### Core + Spillover
-*Investment indicators calculated considering both core and spillover countries. Note that implied adoption only consider adoption in core countries, in spillover countries adoption is assumed to be `r reactive({input$SpillFactor})``% of that in core countries.*
-```{r Analysis - IRR Calc Spillover,echo=F}
-
-InvestStats_IRRspill<-reactive({
-  irr_wrapper(NPV=NPV(),
-              InvestData=InvestData_CS(),
-              ProjectCost=ProjectCost())
-})
-```
-
-```{r Analysis - IRR Calc DT Spillover, echo=F}
-  renderDT({
-    datatable(data.table::copy(InvestStats_IRRspill())[,NPV:=round(NPV/as.numeric(input$USD_Units),3)
-                                                  ][,BCR:=round(BCR,3)
-                                                  ][,IRR:=round(IRR,3)
-                                                    ][,Implied_Adoption:=round(Implied_Adoption,3)
-                                                      ][,Avoided_loss_mean:=abs(round(Avoided_loss_mean,3))],
+    datatable(dplyr::mutate_if(InvestDataCS()$InvestData,is.numeric,~round(.,3)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
