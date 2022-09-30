@@ -2178,9 +2178,8 @@ SpillCVSummary<-reactive({
                         A_adopt=sum(A_adopt,na.rm=T),
                         VOP_non_adopt=sum(VOP_non_adopt,na.rm=T)/as.numeric(input$USD_Units),
                         VOP_adopt=sum(VOP_adopt,na.rm=T)/as.numeric(input$USD_Units),
-                        VOP=sum(VOP,na.rm=T)/as.numeric(input$USD_Units),
                         VOP_CIS=sum(VOP_CIS,na.rm = T)/as.numeric(input$USD_Units),
-                        VOP_Both=sum(VOP_Both,na.rm = T)/as.numeric(input$USD_Units)), 
+                        VOP_both=sum(VOP_both,na.rm = T)/as.numeric(input$USD_Units)), 
                       by=list(Crop,Ad.Rate,Pr.Inc)
                   ][,Ad.Rate:=as.character(Ad.Rate)][,VOP_Total:=VOP_non_adopt+VOP_adopt]
             
