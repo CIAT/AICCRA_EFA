@@ -195,23 +195,27 @@ CGIAR_countries<-terra::vect(CGIAR_countries_sf)
 :::: {style="display: flex;"}
 ::: {}
 ```{r Geographies - Choose core countries}
+AICCRAcountries<-c("Kenya","Ethiopia","Ghana","Mali","Senegal","Zambia")
+
 checkboxGroupInput(inputId="CountriesChoice", 
          label= "Core countries", 
          choices = sort(CGIAR_countries$ADMIN), 
-         selected = c("Kenya","Ethiopia","Ghana","Mali","Senegal","Zambia"),
+         selected = "Kenya",
          inline = T)
 
 ```
 :::
 :::{}
 ```{r Geographies - Choose spillover countries}
+
+AICCRAspillcountries<-c("Burundi","Rwanda","Tanzania","Uganda","Benin","Burkina Faso","Chad","Cote d'Ivoire",
+                       "Cameroon","Guinea","Gambia","Guinea-Bissau","Mauritania","Niger","Nigeria","Togo",
+                       "Botswana","Malawi","Mozambique","Zimbabwe")
 renderUI({
   checkboxGroupInput(inputId="SpillCountriesChoice", 
            label= "Spillover countries", 
            choices = sort(CGIAR_countries$ADMIN[!CGIAR_countries$ADMIN %in% input$CountriesChoice]), 
-           selected =c("Burundi","Rwanda","Tanzania","Uganda","Benin","Burkina Faso","Chad","Cote d'Ivoire",
-                       "Cameroon","Guinea","Gambia","Guinea-Bissau","Mauritania","Niger","Nigeria","Togo",
-                       "Botswana","Malawi","Mozambique","Zimbabwe"),
+           selected = NULL,
            inline = T)
 })
 
@@ -2218,7 +2222,7 @@ Explanation of Investment tab headings:
 **`CISinc`**  indicates if estimates of CIS benefits are included in calculations or not; 
 **`Periods`** = project duration (years); 
 **`StartPeriod`** = the period (year) in which returns start; 
-**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (proportion), the mean is calculated across all farming system x crop x country combinations; 
+**`Avoided_loss_mean`** = the mean reduction in yield losses due to climate variability from use of CIS (percentage), the mean is calculated across all farming system x crop x country combinations; 
 **`Implied Adoption`** = total assumed adoption of technologies in core countries; 
 **`NPV`** net-present value (international USD); 
 **`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; 
