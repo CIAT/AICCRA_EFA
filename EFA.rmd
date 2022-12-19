@@ -155,7 +155,7 @@ numericInput(inputId="borderwidth",
   Plot.Width <- function(){input$PlotBaseWidth*input$Plot.Width}
 ```
 
-### Philosophy
+### Approach
 
 This economic and financial analysis (EFA) of project benefits is designed to explore:  
 
@@ -166,16 +166,17 @@ This economic and financial analysis (EFA) of project benefits is designed to ex
 
 The EFA is carried out in several stages:  
 
-1. **Datasets:** Choose the core and spillover countries that will benefit from project activities;  
-2. **Datasets:** Choose farm classification system and target classes; 
-3. **Datasets:** Choose target crops, type of MapSPAM cropping system (e.g. rainfed, irrigated or all) and type of MapSPAM area statistic (physical area or harvested area);
-4. **Datasets:** Choose target Herrero livestock categories;
-5. **Analysis: Productivity increment value** Calculate the value of the benefit that would result from a 1% increase in crop and livestock productivity over the selected core areas (the increment can be adjusted);  
-6. **Analysis: Marginal increase in value** The value of the benefits is adjusted in recognition of the fact that adoption will occur gradually over time and will not reach the entire area.
-7. **Analysis: Avoided losses from reduction in CV**
-8. **Analysis: Investment indicators**
+1. **Datasets tab:** Choose the core and spillover countries that will benefit from project activities;  
+2. **Datasets tab:** Choose farm classification system and target classes; 
+3. **Datasets tab:** Choose target crops, type of MapSPAM cropping system (e.g. rainfed, irrigated or all) and type of MapSPAM area statistic (physical area or harvested area);
+4. **Datasets tab:** Choose target Herrero livestock categories;
+5. **Analysis tab:** Set-up project parameters such as expected annual productivity increments and adoption rates, the spillover factor to neighboring countries, a benefit-cost ratio representative of farming systems in the focal area, and project economic parameters (total cost, duration, discounting rate, starting year of returns).
+6. **Analysis tab: Productivity increment value** Calculate the value of the benefit that would result from a chosen % increase in crop and livestock productivity over the selected core and spillover areas (the increment can be adjusted);  
+7. **Analysis tab: Marginal increase in value** The value of improved productivity is converted to range of plausible adoption rates and productivity increments at scale.
+8. **Analysis tab: Avoided losses from reduction in CV** One way to translate reduced yield variability into production benefits is to calculate the economic losses avoided (in terms of value of production) for a percentage reduction in yield CV, measured with respect to the left-hand tail of the production distribution. A very approximate estimate is to assume that maize yields in farmers’ fields are distributed normally and calculate the difference in the probability densities of two normal yield density curves, one with the observed mean and yield CV and another with the same mean but a reduced yield CV. In practice, mean yields will increase through the use of CIS, but as explained above the focus here is on the avoided losses, which may be extremely important for household food security.
+9. **Analysis tab: Investment indicators** For the range of productivity increments and adoption rates specified, with or without avoided losses from CIS use, three economic indicators are calculated for project performance: Net Present Value (NPV), Internal Rate of Return (IRR) and Benefit Cost Ratio (BCR ). The project duration, discount rate, starting year of returns and project cost are all adjustable.
 
-All spatial variables are standardized to grids of 5 arcminute resolution.
+All spatial variables are standardized to grids of 5 arcminute resolution (9.26 km or 85.75km2 at the equator).
 
 ### Datasets {.tabset .tabset-fade .tabset-pills}
 
@@ -341,7 +342,7 @@ renderUI({
 :::
 ::::
 
-**Crops**
+**Crops (MapSPAM)**
 
 :::: {style="display: flex;"}
 ::: {}
@@ -349,7 +350,7 @@ renderUI({
 MS_options<-data.table::fread("Data/MapSPAM/MS Files.csv")
 
 selectInput(inputId="MSTech", 
-         label= "MapSPAM technology", 
+         label= "Technology", 
          choices = MS_options[,sort(unique(Tech))], 
          selected = c("all technologies"),
          multiple = F,
@@ -361,7 +362,7 @@ MSTechCode<-reactive({MS_options[Tech==input$MSTech,unique(TechCode)]})
 :::{}
 ```{r Crops - Choose MapSPAM area type}
 selectInput(inputId="MSAreaType", 
-         label= "MapSPAM area type", 
+         label= "Area type", 
          choices = c("physical","harvested"), 
          selected = c("harvested"),
          multiple = F,
@@ -447,7 +448,7 @@ renderPlot({terra::plot(CGIAR_countries2(),
 ```
 
 
-#### Farming Systems
+#### Farming systems
 [GLPC Livestock Production Systems (LPS) map](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/WPDSZE) by [Robinson et al. 2014](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0096084)
 
 *ADD DETAILS FOR ADAPTATION ATLAS LAYERS*
@@ -469,7 +470,7 @@ renderPlot({terra::plot(Farming_System(),
                         main="Global Distribution of LPS (Robinson et al. 2014)",
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=length(levels(Farming_System())[[1]]), 
+                        col=viridis(n=nrow(levels(Farming_System())[[1]]), 
                                     option =input$Palette,
                                     direction = if(input$Palette=="turbo"){1}else{-1}),
                         cex.main = input$TextSize*1.2,
@@ -480,140 +481,34 @@ renderPlot({terra::plot(Farming_System(),
   },height=Plot.Height, width=Plot.Width)
 ```
 
-#### Livestock {.tabset .tabset-fade .tabset-pills}
-##### Value & Yield {.tabset .tabset-fade .tabset-pills}
-These datasets come from [Herrero et al. 2013](https://www.pnas.org/doi/abs/10.1073/pnas.1308149110) in particular see the [supporting information](https://www.pnas.org/doi/suppl/10.1073/pnas.1308149110/suppl_file/sapp.pdf) for a detailed explanation of their methods.
+#### Crops (MapSPAM) {.tabset .tabset-fade .tabset-pills}
+MapSPAM datasets are used for crop value of production (VoP), Yield, Total Production and Area and can be downloaded [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FSSKBW) and methods reviewed [here](https://www.mapspam.info/methodology/).
 
-Phil Thorton confirms that livestock VoP (as for crops) was calculated as production (t) times price ($/t). In the PNAS dataset, one international (global) price was used for each commodity for comparability, and these were 2005 dollars.
+**MapSPAM technology descriptions:**  
 
-###### Value of production (VoP) 
-```{r Datasets - Load LSvop,echo=F}
-# *CellSize.km to convert from USD/km2/year to USD/pixel/year
+* **all technologies** = all technologies together, ie complete crop or crop group.  
 
-LSvop1<-reactive({
-  terra::mask(terra::crop(
-     terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="VOP",Filename]))*CellSize.km
-  ,Farming_System()),Farming_System())
-})
+* **irrigated** =	refers to the crop area equipped with either full or partial control irrigation. Normally the crop production on the irrigated fields uses a high level of inputs such as modern varieties and fertilizer as well as advanced management such as soil/water conservation measures.  
 
-```
+* **rainfed all** = rainfed portion of crop or crop group (= all technologies - irrigated).  
 
-```{r Datasets - LS rename and add totals, echo=F}
-# Rename layers
-LSvop<-reactive({
-  LSfun(Data=LSvop1(),Choice=input$LSChoice,Extension="_vop",TotalName="LS",IncTot=input$IncTot)
-})
+* **rainfed high** = rainfed-based, uses high-yield varieties and some animal traction and mechanization. It at least applies some fertilizer, chemical pest, disease or weed controls and most of the product is produced for the market.  
 
-```
+* **rainfed low** = rainfed crop production which uses traditional varieties and mainly manual labor without (or with little) application of nutrients or chemicals for pest and disease control. Production is mostly for their own consumption.  
 
-**Value of livestock production  ln(USD/pixel)**
-```{r Datasets - Plot LSvop, echo =F}
-renderPlot({terra::plot(log(LSvop()),
-                        fun=AddBorders(),
-                        pax=list(cex.axis=input$TextSize),
-                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=20,
-                                    option =input$Palette,
-                                    direction = if(input$Palette=="turbo"){1}else{-1}),
-                        cex.main = input$TextSize*1.2,
-                        axes = F,
-                        frame.plot= F)
-  },height=Plot.Height, width=Plot.Width)
+* **rainfed subsistence** = rainfed, low-input/subsistence production was introduced to account for situations where cropland and suitable areas do not exist, but farmland is still present in some way.    
+The definition of these production systems (management levels) more or less follows [FAO/IIASA’s GAEZ](http://www.iiasa.ac.at/Research/LUC/GAEZ/index.htm) project since SPAM uses its suitability surfaces.  
 
-```
+**MapSPAM area type descriptions:**  
 
-###### Yield & Production
-*Yield units are converted from kg/km2/year to t/km2/year*
-```{r Datasets - Load LSyield,echo=F}
-# Divide by 1000 to convert kg to t
-LSyield<-reactive({
-  terra::mask(terra::crop(
-    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))/1000 
-  ,Farming_System()),Farming_System())
-})
+* **Physical**  = Physical area is measured in a hectare and represents the actual area where a crop is grown, not counting how often production was harvested from it. Physical area is calculated for each production system and crop, and the sum of all physical areas of the four production systems constitute the total physical area for that crop. The sum of the physical areas of all crops in a pixel may not be larger than the pixel size.  
 
-# *CellSize.km converts yield t/km2/year to production per pixel t/pixel/year
-LSprod2<-reactive({
-  terra::mask(terra::crop(
-    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))*CellSize.km/1000
-  ,Farming_System()),Farming_System())
-})
+* **Harvested** = Harvested area is measured in a hectare, harvested area is at least as large as physical area, but sometimes more, since it also accounts for multiple harvests of a crop on the same plot. Like for physical area, the harvested area is calculated for each production system and the sum of all harvested areas of all production systems in a pixel amount to the total harvested area of the pixel. The sum of all the harvested areas of the crops in a pixel can be larger than the pixel size.  
 
-# Rename layers
-LSprod<-reactive({
-  LSfun(Data=LSprod2(),Choice=input$LSChoice,Extension="_prod",TotalName="LS",IncTot=input$IncTot)
-})
-
-```
-
-**Livestock production ln(t/pixel)**
-```{r Datasets - Plot LSprod, echo =F}
-renderPlot({terra::plot(log(LSprod()),
-                        fun=AddBorders(),
-                        pax=list(cex.axis=input$TextSize),
-                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=20,
-                                    option =input$Palette,
-                                    direction = if(input$Palette=="turbo"){1}else{-1}),
-                        cex.main = input$TextSize*1.2,
-                        legend = input$LegPos,
-                        axes = F,
-                        frame.plot= F)
-  },height=Plot.Height, width=Plot.Width)
-```
-
-**Livestock yield ln(t/ha)**
-```{r Datasets - Plot LSyield, echo =F}
-renderPlot({terra::plot(log(LSyield()),
-                        fun=AddBorders(),
-                        pax=list(cex.axis=input$TextSize),
-                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=20,
-                                    option =input$Palette,
-                                    direction = if(input$Palette=="turbo"){1}else{-1}),
-                        cex.main = input$TextSize*1.2,
-                        axes = F,
-                        frame.plot= F)
-  },height=Plot.Height, width=Plot.Width)
-```
-
-###### LS Area
-*Note that we do not have a layer for this data so cellsize is currently substituted.*
-```{r Datasets - Load LSarea,echo=F}
-LSarea1<-reactive({
-    LSareaFun(Data=LSprod())
-})
-
-# Rename layers
-LSarea<-reactive({
-  LSfun(Data=LSarea1(),Choice=input$LSChoice,Extension="_area",TotalName="LS",IncTot=input$IncTot)
-})
-
-```
-
-**Livestock area (pixel size, ha)**
-```{r Datasets - Plot LSarea, echo =F}
-renderPlot({terra::plot(LSarea(),
-                        fun=AddBorders(),
-                        pax=list(cex.axis=input$TextSize),
-                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
-                        col=viridis(n=20,
-                                    option =input$Palette,
-                                    direction = if(input$Palette=="turbo"){1}else{-1}),
-                        cex.main = input$TextSize*1.2,
-                        lengend = input$LegPos,
-                        axes = F,
-                        frame.plot= F)
-  },height=Plot.Height, width=Plot.Width)
-```
-
-#### Crops {.tabset .tabset-fade .tabset-pills}
-MapSPAM datasets are used for crop VoP, Yield, Total Production and Area and can be downloaded [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FSSKBW) and methods reviewed [here](https://www.mapspam.info/methodology/).
-
-Citation: *International Food Policy Research Institute, 2020, "Spatially-Disaggregated Crop Production Statistics Data in Africa South of the Sahara for 2017", https://doi.org/10.7910/DVN/FSSKBW, Harvard Dataverse, V3*
+Citation: *International Food Policy Research Institute, 2020, "Spatially-Disaggregated Crop Production Statistics Data in Africa South of the Sahara for 2017", https://doi.org/10.7910/DVN/FSSKBW, Harvard Dataverse, V3*  
 
 ##### Value of Production (VoP)
-*SPAM’s cross entropy starts with prior knowledge of where crops may be grown and to which extent. It assumes that farmers, given a choice of different crops, will grow those which generate more revenue. And this is where crop prices come in. We use a different price for every crop, but the same price for all countries: 2004-2006 average international price, as used by FAO to compute Value of Production.*  
+*SPAM’s cross entropy starts with prior knowledge of where crops may be grown and to which extent. It assumes that farmers, given a choice of different crops, will grow those which generate more revenue, this is where crop prices come in. SPAM uses a different price for every crop, but the same price for all countries: 2004-2006 average international price, as used by FAO to compute Value of Production.*  
 Download VoP [here](https://dataverse.harvard.edu/file.xhtml?fileId=4271679&version=3.0).
 
 ```{r Datasets - Load MapSPAM VoP,echo=F}
@@ -758,8 +653,136 @@ renderPlot({terra::plot(log(MSprod()),
 
 *Yield is a measure of productivity, the amount of production per harvested area, and is measured in kilogram/hectare. The total yield of a crop, when considering all production systems, is not the sum of the individual yields, but the weighted average of the 4 yields. Note that we do not directly extract yield from MapSPAM rasters in this analysis, rather we calculate by dividing production by harvested area.*  
 
+#### Livestock {.tabset .tabset-fade .tabset-pills}
+These datasets come from [Herrero et al. 2013](https://www.pnas.org/doi/abs/10.1073/pnas.1308149110) in particular see the [supporting information](https://www.pnas.org/doi/suppl/10.1073/pnas.1308149110/suppl_file/sapp.pdf) for a detailed explanation of their methods.
+
+Livestock VoP (as for crops) was calculated as production (t) times price ($/t). In the PNAS dataset, one international (global) price was used for each commodity for comparability, and these were 2005 dollars (Phil Thorton *pers comms*).
+
+##### Value of production (VoP) 
+```{r Datasets - Load LSvop,echo=F}
+# *CellSize.km to convert from USD/km2/year to USD/pixel/year
+
+LSvop1<-reactive({
+  terra::mask(terra::crop(
+     terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="VOP",Filename]))*CellSize.km
+  ,Farming_System()),Farming_System())
+})
+
+```
+
+```{r Datasets - LS rename and add totals, echo=F}
+# Rename layers
+LSvop<-reactive({
+  LSfun(Data=LSvop1(),Choice=input$LSChoice,Extension="_vop",TotalName="LS",IncTot=input$IncTot)
+})
+
+```
+
+**Value of livestock production  ln(USD/pixel)**
+```{r Datasets - Plot LSvop, echo =F}
+renderPlot({terra::plot(log(LSvop()),
+                        fun=AddBorders(),
+                        pax=list(cex.axis=input$TextSize),
+                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
+                        col=viridis(n=20,
+                                    option =input$Palette,
+                                    direction = if(input$Palette=="turbo"){1}else{-1}),
+                        cex.main = input$TextSize*1.2,
+                        axes = F,
+                        frame.plot= F)
+  },height=Plot.Height, width=Plot.Width)
+
+```
+
+##### Yield & production
+*Yield units are converted from kg/km2/year to t/km2/year*
+```{r Datasets - Load LSyield,echo=F}
+# Divide by 1000 to convert kg to t
+LSyield<-reactive({
+  terra::mask(terra::crop(
+    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))/1000 
+  ,Farming_System()),Farming_System())
+})
+
+# *CellSize.km converts yield t/km2/year to production per pixel t/pixel/year
+LSprod2<-reactive({
+  terra::mask(terra::crop(
+    terra::rast(paste0("Data/Herrero/Resampled/",LSvop_options[System %in% input$LSChoice & Variable=="MeatYield",Filename]))*CellSize.km/1000
+  ,Farming_System()),Farming_System())
+})
+
+# Rename layers
+LSprod<-reactive({
+  LSfun(Data=LSprod2(),Choice=input$LSChoice,Extension="_prod",TotalName="LS",IncTot=input$IncTot)
+})
+
+```
+
+**Livestock production ln(t/pixel)**
+```{r Datasets - Plot LSprod, echo =F}
+renderPlot({terra::plot(log(LSprod()),
+                        fun=AddBorders(),
+                        pax=list(cex.axis=input$TextSize),
+                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
+                        col=viridis(n=20,
+                                    option =input$Palette,
+                                    direction = if(input$Palette=="turbo"){1}else{-1}),
+                        cex.main = input$TextSize*1.2,
+                        legend = input$LegPos,
+                        axes = F,
+                        frame.plot= F)
+  },height=Plot.Height, width=Plot.Width)
+```
+
+**Livestock yield ln(t/ha)**
+```{r Datasets - Plot LSyield, echo =F}
+renderPlot({terra::plot(log(LSyield()),
+                        fun=AddBorders(),
+                        pax=list(cex.axis=input$TextSize),
+                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
+                        col=viridis(n=20,
+                                    option =input$Palette,
+                                    direction = if(input$Palette=="turbo"){1}else{-1}),
+                        cex.main = input$TextSize*1.2,
+                        axes = F,
+                        frame.plot= F)
+  },height=Plot.Height, width=Plot.Width)
+```
+
+##### LS Area
+*Note that we do not have a layer for this data so cellsize is currently substituted.*
+```{r Datasets - Load LSarea,echo=F}
+LSarea1<-reactive({
+    LSareaFun(Data=LSprod())
+})
+
+# Rename layers
+LSarea<-reactive({
+  LSfun(Data=LSarea1(),Choice=input$LSChoice,Extension="_area",TotalName="LS",IncTot=input$IncTot)
+})
+
+```
+
+**Livestock area (pixel size, ha)**
+```{r Datasets - Plot LSarea, echo =F}
+renderPlot({terra::plot(LSarea(),
+                        fun=AddBorders(),
+                        pax=list(cex.axis=input$TextSize),
+                        plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
+                        col=viridis(n=20,
+                                    option =input$Palette,
+                                    direction = if(input$Palette=="turbo"){1}else{-1}),
+                        cex.main = input$TextSize*1.2,
+                        lengend = input$LegPos,
+                        axes = F,
+                        frame.plot= F)
+  },height=Plot.Height, width=Plot.Width)
+```
+
 #### FAOSTAT{.tabset .tabset-fade .tabset-pills}
-##### Prepare Data
+FAO data are used to estimate the national level variation in crop production over time. They are downloaded using the [FAOSTAT::get_faostat_bulk](https://search.r-project.org/CRAN/refmans/FAOSTAT/html/download_faostat_bulk.html) function. Data can also be accessed from the  [FAOSTAT website](https://www.fao.org/faostat/en/#data/QCL) and directly downloaded [here](https://fenixservices.fao.org/faostat/static/bulkdownloads/Production_Crops_Livestock_E_All_Data_(Normalized).zip).  
+
+##### Prepare data
 ```{r Datasets - Load FAOSTAT, echo=T}
 FAODir<-"Data/FAO"
 FAOFile<-paste0(FAODir,"/FAO_prod.RData")
@@ -864,7 +887,8 @@ FAO_prod<-FAO_prod[!is.na(SpamName)]
 
 ```
 
-##### Raw Data
+##### Raw data
+To interpret these data please see the meta-data section under `Crops and livestock products` in this [FAOSTAT website](https://www.fao.org/faostat/en/#data/QCL) and this [pdf](https://fenixservices.fao.org/faostat/static/documents/Default_coding_and_flags.pdf). The `SpamName` field converts the FAO crop name in the `item` column to the corresponding SPAM name.
 ```{r Datasets - FAOSTAT DT Raw, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(FAO_prod,is.numeric,~round(.,3)),
@@ -877,7 +901,8 @@ FAO_prod<-FAO_prod[!is.na(SpamName)]
   })
 ```
 
-##### CV Data
+##### Coefficent of variation (CV)
+For a national time series of crop yields CV is calculated as `100*(sd(crop_yield)/mean(crop_yield))`.
 ```{r Datasets - FAOSTAT DT, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(FAO_CV,is.numeric,~round(.,3)),
@@ -919,7 +944,7 @@ renderPlot({terra::plot(FAOCountries(),
            height=Plot.Height, width=Plot.Width)
 ```
 
-**Mean yields**
+**Mean yields (t/ha)**
 ```{r Datasets - plot FAO data yields, echo =F}
 renderPlot({terra::plot(FAOCountries(),
                         paste0(input$CropChoice,"_Mean"),
@@ -938,13 +963,24 @@ renderPlot({terra::plot(FAOCountries(),
            height=Plot.Height, width=Plot.Width)
 ```
 
+**Download data used the CV and mean yield plots above**
+```{r Datasets - FAOSTAT Plot DT, echo=F}
+  renderDT({
+    datatable(dplyr::mutate_if(as.data.table(FAOCountries())[!is.na(Choice),!c("CG_REG","Colour","Linetype")],is.numeric,~round(.,3)),
+                caption="",
+                extensions = 'Buttons',
+                filter = "top",
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),c(10,25,50,"All"))))
+  })
+```
+
 #### Human population
-*Not currently used in the analysis*
-**--add dataset details--**
-**CHECK resampling method = "near" is correct**
+*Not currently used in the analysis, but may be integrated in future*
 ```{r Datasets - Load Hpop, echo = F}
 # Load and resample raster
-Hpop2<-terra::resample(terra::rast(unzip("Data/Exposure/cell5m_ruralpop_2020_v3.zip")),BaseRaster,method="near")
+Hpop2<-terra::resample(terra::rast(unzip("Data/Exposure/cell5m_ruralpop_2020_v3.zip")),BaseRaster,method="bilinear")
 # Force raster into memory 
 if(terra::sources(Hpop2)!=""){
   Hpop2<-terra::rast(raster::readAll(raster::raster(Hpop2)))
@@ -979,9 +1015,8 @@ renderPlot({terra::plot(log(Hpop()),
 ```
 
 #### Climate hazards
-*Not currently used in the analysis*
-**Chirps rainfall coefficient of variation**
-
+*Not currently used in the analysis, but may be integrated in future*
+**CHIRPS rainfall coefficient of variation**
 ```{r Datasets - Load climate hazards, echo = F}
 RainCV2<-terra::resample(terra::rast("Data/Hazards/chirps_cv.tif"),BaseRaster,method="near")
 names(RainCV2)<-"RainCV"
@@ -1006,15 +1041,41 @@ renderPlot({terra::plot(log(RainCV()),
                         frame.plot= F)
   },height=Plot.Height, width=Plot.Width)
 ```
+#### Combine selections
+Here the data selections are combined into a raster stack.
+```{r Datasets - Stack datasets,echo=T}
+names(CellSize.ha)<-"Area.ha"
 
+Stacked<-reactive({
+  c(Farming_System(),
+    LSvop(),
+    LSarea(),
+    LSprod(),
+    MSvop(),
+    MSarea(),
+    MSprod(),
+    Hpop(),
+    RainCV()
+    )
+})
+
+# Columns to sum
+SumCols<-reactive({
+  c(names(Stacked())[!names(Stacked()) %in% c("Farming_System","CellSize.ha","RainCV")],"CellSize.ha")
+})
+
+# Columns to analyse
+prod_cols<-reactive({c(names(MSprod()),names(LSprod()))})
+area_cols<-reactive({c(names(MSarea()),names(LSarea()))})
+vop_cols<-reactive({c(names(MSvop()),names(LSvop()))})
+```
 ### Analysis {.tabset .tabset-fade .tabset-pills}
 
 :::: {style="display: flex;"}
 ::: {}
 
-**Annual productivity increments**  
+**Productivity increments (%)**  
 *1-3 values can be entered.*  
-*Enter value as a percentage (%)*
 
 :::: {style="display: flex;"}
 ::: {}
@@ -1025,7 +1086,7 @@ renderPlot({terra::plot(log(RainCV()),
               min=0,              
               max=100,
               step = 1,
-              width="100px")
+              width="90px")
 ```
 :::
 :::{}
@@ -1036,7 +1097,7 @@ renderPlot({terra::plot(log(RainCV()),
               min=0,              
               max=100,
               step = 1,
-              width="100px")
+              width="90px")
 ```
 :::
 :::{}
@@ -1047,7 +1108,7 @@ renderPlot({terra::plot(log(RainCV()),
               min=0,              
               max=100,
               step = 1,
-              width="100px")
+              width="90px")
 ```
 :::
 ::::
@@ -1055,9 +1116,8 @@ renderPlot({terra::plot(log(RainCV()),
 :::
 :::{}
 
-**Annual adoption rates in core areas**  
-*1-3 values can be entered.*  
-*Enter value as a percentage (%   )*
+**Annual adoption rates in core areas(%)**  
+*1-3 values can be entered.* 
 
 :::: {style="display: flex;"}
 ::: {}
@@ -1097,7 +1157,7 @@ renderPlot({terra::plot(log(RainCV()),
 
 :::
 :::{}
-.  
+
 *The % of adoption in core countries*  
 *that spills to spillover countries* 
 ```{r Parameter - Spillover Factor,echo=F}
@@ -1107,14 +1167,14 @@ renderPlot({terra::plot(log(RainCV()),
               min=0,              
               max=100,
               step = 1,
-              width="260px")
+              width="230px")
 ```
 
 :::
 :::{}
-*Benefit-cost ratio for non-adopters*  
-*Harris and Orr (2013) find this is *  
-*1.62 for "traditional" technologies*
+
+*Benefit-cost ratio*  
+*[1.62 for “traditional” technologies](https://doi.org/10.1016/j.agsy.2013.09.005)*  
 ```{r Parameter - Non BCR,echo=F}
   numericInput(inputId="Non_BCR", 
               label="BCR of non-adopters",
@@ -1122,13 +1182,13 @@ renderPlot({terra::plot(log(RainCV()),
               min=0,              
               max=10,
               step = 0.01,
-              width="300px")
+              width="250px")
 ```
 :::
 :::{}
+
 *To estimate the value of CIS this value is*  
-*subtracted from the CV for each combination*  
-*of crop x country*
+*subtracted from country x crop CV values*
 ```{r Parameter - CV reduction amount,echo=F}
   numericInput(inputId="CV_Change", 
               label="CV reduction",
@@ -1157,6 +1217,7 @@ Ad.Rates.Spillover<-reactive({
 
 :::: {style="display: flex;"}
 ::: {}
+
 *The project duration in years*
 ```{r Parameter - Timeframe,echo=F}
   numericInput(inputId="Years", 
@@ -1169,6 +1230,7 @@ Ad.Rates.Spillover<-reactive({
 ```
 :::
 :::{}
+
 *Discount rate used for NPV calculations*
 ```{r Parameter - Discount Rate,echo=F}
   numericInput(inputId="DiscountRate1", 
@@ -1183,6 +1245,7 @@ DiscountRate<-reactive({input$DiscountRate1/100})
 ```
 :::
 :::{}
+
 *The year that returns begin after investment?* 
 ```{r Parameter - StartPeriod,echo=F}
   selectInput(inputId="StartYear1", 
@@ -1196,6 +1259,7 @@ StartYear<-reactive({as.numeric(input$StartYear1)})
 ```
 :::
 :::{}
+
 *The cost of the project (million USD)*
 ```{r Parameter - Project Cost,echo=F}
   numericInput(inputId="ProjectCost1", 
@@ -1273,38 +1337,7 @@ selectInput(inputId="Prod_Unit",
 :::
 ::::
 
-#### Data prep & analysis functions
-
-Stack datasets
-```{r Datasets - Stack datasets,echo=T}
-names(CellSize.ha)<-"Area.ha"
-
-Stacked<-reactive({
-  c(Farming_System(),
-    LSvop(),
-    LSarea(),
-    LSprod(),
-    MSvop(),
-    MSarea(),
-    MSprod(),
-    Hpop(),
-    RainCV()
-    )
-})
-
-# Columns to sum
-SumCols<-reactive({
-  c(names(Stacked())[!names(Stacked()) %in% c("Farming_System","CellSize.ha","RainCV")],"CellSize.ha")
-})
-
-# Columns to analyse
-prod_cols<-reactive({c(names(MSprod()),names(LSprod()))})
-area_cols<-reactive({c(names(MSarea()),names(LSarea()))})
-vop_cols<-reactive({c(names(MSvop()),names(LSvop()))})
-```
-
-#### Data extraction{.tabset .tabset-fade .tabset-pills}
-
+#### Extracted data{.tabset .tabset-fade .tabset-pills}
 ##### Core countries{.tabset .tabset-fade .tabset-pills}
 ```{r Extraction - Core countries,echo=F}
 Stats.Core<-reactive({
@@ -1499,7 +1532,7 @@ Explanation of table headings:
 **`NR_non_adopt`** = net return for non-adopters as `A_adopt*(Y_adopt*Price-Cost_adopt)`;
 **`NR_adopt`** = net return for adopters as `A_non_adopt*(Y_non_adopt*Price-Cost_non_adopt)`;
 **`Project_benefits`** = marginal value of adoption (international USD) as `NR_non_adopt+NR_adopt-NR_non_adopt_t0` where `NR_non_adopt_t0` is the net return of the system before any technology adoption has occurred.
-For more information on how `Total_adoption` is calculated see the `MarginalInc` function found in the **Analysis::Data prep & analysis functions** tab.
+For more information on how `Total_adoption` is calculated see the `MarginalInc` function found in the `ERA functions.R` script..
 
 ##### Core countries{.tabset .tabset-fade .tabset-pills}
 Here we modify the benefits from the previous tab for a range of adoption rates `r reactive({paste0("(",paste(100*Ad.Rates.Core(),collapse=", "),"%)")})` and productivity increments `r reactive({paste0("(",paste(100*Pr.Inc(),collapse=", "),"%)")})` at scale. Calculations are shown in the annex. The productivity increments used here should be within what has been observed in many situations for the technology being assessed. Regarding adoption rates, there are not many examples of agricultural technology adoption rates at scale in excess of 2% per year (see Thornton and Herrero, 2010, for example). The annual adoption rates used here refer to the total area of crop and/or number of cattle that have not yet adopted over a `r reactive({input$Years})` year period. So, for example, 2% adoption in year 8 is not the same number as 2% adoption in year 2. For this reason, the estimates of VOP addition are not simple linear multiples of the adoption rate per year shown.
@@ -1518,7 +1551,7 @@ MI.Core<-reactive({
 
 ```{r Analysis - MI Core DT, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(data.table::copy(MI.Core())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Core())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,4)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1546,7 +1579,7 @@ MI.Core.Total<-reactive({
 
 
   renderDT({
-    datatable(dplyr::mutate_if(data.table::copy(MI.Core.Total())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Core.Total())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,4)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1573,7 +1606,7 @@ MI.Spillover<-reactive({
 
 ```{r Analysis - MI Spillover DT, echo=F}
   renderDT({
-    datatable(dplyr::mutate_if(data.table::copy(MI.Spillover())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Spillover())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,4)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1601,7 +1634,7 @@ MI.Spill.Total<-reactive({
 
 
   renderDT({
-    datatable(dplyr::mutate_if(data.table::copy(MI.Spill.Total())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,3)),
+    datatable(dplyr::mutate_if(data.table::copy(MI.Spill.Total())[,Ad.Rate:=as.character(Ad.Rate)],is.numeric,~round(.,4)),
                 caption="",
                 extensions = 'Buttons',
                 filter = "top",
@@ -1642,7 +1675,7 @@ CoreCV<-reactive({
 ```
 
 ###### CV table
-This table is derived from the FAOSTAT data presented in the **Datasets::FAO** tab. Each row in the extracted data tables represents a crop within a country. Explanation of table headings: **`N.Years`** = number of years of FAO national yield data available; **`Yield_Mean`** = mean FAO crop yield (t/ha); **`Yield_SD`** = standard deviation of crop yield;  **`CV`** = coefficient of variation for crop yield as `100*(Yield_SD/Yield_Mean)`;  **`CVreduced`** = value of CV following reduction in variability due to use of CIS; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%). For more information on how `AvoidedLossPerc` is calculated see the `AvLoss` function found in the **Analysis::Data prep & analysis functions** tab.
+This table is derived from the FAOSTAT data presented in the **Datasets::FAO** tab. Each row in the extracted data tables represents a crop within a country. Explanation of table headings: **`N.Years`** = number of years of FAO national yield data available; **`Yield_Mean`** = mean FAO crop yield (t/ha); **`Yield_SD`** = standard deviation of crop yield;  **`CV`** = coefficient of variation for crop yield as `100*(Yield_SD/Yield_Mean)`;  **`CVreduced`** = value of CV following reduction in variability due to use of CIS; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%). For more information on how `AvoidedLossPerc` is calculated see the `AvLoss` function in the `ERA functions.R` script.
 ```{r Analysis -  Core avoided losses DT CV_Data, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(CoreCV()$CV_Data,is.numeric,~round(.,3)),
@@ -1728,7 +1761,7 @@ SpilloverCV<-reactive({
 ```
 
 ###### CV table
-This table is derived from the FAO data presented in the **Datasets::FAO** tab. Each row in the extracted data tables represents a crop within a country. Explanation of table headings: **`N.Years`** = number of years of FAO national yield data available; **`Yield_Mean`** = mean FAO crop yield (t/ha); **`Yield_SD`** = standard deviation of crop yield;  **`CV`** = coefficient of variation for crop yield as `100*(Yield_SD/Yield_Mean)`;  **`CVreduced`** = value of CV following reduction in variability due to use of CIS; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%). For more information on how `AvoidedLossPerc` is calculated see the `AvLoss` function found in the **Analysis::Data prep & analysis functions** tab.
+This table is derived from the FAO data presented in the **Datasets::FAO** tab. Each row in the extracted data tables represents a crop within a country. Explanation of table headings: **`N.Years`** = number of years of FAO national yield data available; **`Yield_Mean`** = mean FAO crop yield (t/ha); **`Yield_SD`** = standard deviation of crop yield;  **`CV`** = coefficient of variation for crop yield as `100*(Yield_SD/Yield_Mean)`;  **`CVreduced`** = value of CV following reduction in variability due to use of CIS; **`AvoidedLossPerc`** = reduction in yield losses due to climate variability from use of CIS (%). For more information on how `AvoidedLossPerc` is calculated see the `AvLoss` function found in the `ERA functions.R` script.
 ```{r Analysis -  Spillover avoided losses DT CV_Data, echo=F}
   renderDT({
     datatable(dplyr::mutate_if(SpilloverCV()$CV_Data,is.numeric,~round(.,3)),
@@ -1828,7 +1861,7 @@ Explanation of Investment tab headings:
 **`Implied Adoption`** = total assumed adoption of technologies in core countries; 
 **`NPV`** net-present value (international USD); 
 **`BCR`** = benefit-cost ratio as `NPV/ProjectCost`; 
-**`IRR`** = internal rate of return (see the `irr` function in **Analysis::Data prep & analysis functions** tab for methodological details).
+**`IRR`** = internal rate of return (see the `irr` function in in the `ERA functions.R` script for methodological details).
 
 ```{r Analysis - NPV Calc 1 Core,echo=F}
 InvestDataCore<-reactive({
