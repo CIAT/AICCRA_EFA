@@ -2,15 +2,17 @@
 #' @export
 FS_Options_Fun<-function(FS_Selected,ExtractBy.All){
   Mapped<-data.table(terra::levels(FS_Selected)[[1]])
+  colnames(Mapped)<-c("ID","Level")
   FS<-terra::mask(FS_Selected,ExtractBy.All)
   FSVals<-unique(FS[!is.na(FS)][])
-  return(as.vector(sort(unlist(Mapped[ID %in% FSVals,2]))))
+  FSVals<-as.vector(sort(unlist(Mapped[ID %in% FSVals,2])))
+  return(FSVals)
 }
 #' FSsub_Fun
 #' @export
 FSsub_Fun<-function(FS,Choice,Mask){
   Mapped<-data.table(terra::levels(FS)[[1]])
-  colnames(Mapped)[2]<-"Level"
+  colnames(Mapped)<-c("ID","Level")
   ID<-Mapped[Level %in% Choice,ID]
 
   FS[which(!FS[] %in% ID)]<-NA
@@ -74,6 +76,8 @@ MSfun<-function(VAR,TECH,CROPS,BaseRaster,MASK,MS_options,Name,IncTot){
 #' @export
 FAOPlot<-function(Map,FAO_CV,CropChoice){
 
+  Map<-Map[!is.na(Map$Choice)]
+
   for(CROP in CropChoice){
     Data<-FAO_CV[SpamName == CROP]
     N<-match(Map$ADMIN,Data$area)
@@ -82,14 +86,6 @@ FAOPlot<-function(Map,FAO_CV,CropChoice){
 
     Map[is.na(Map$Choice),paste0(CROP,"_CV")]<-NA
     Map[is.na(Map$Choice),paste0(CROP,"_Mean")]<-NA
-
-    # N1<-which(!is.na(Map$Choice))
-    #N2<-which(is.na(values(Map[N1,paste0(CROP,"_CV")])))
-
-    #  if(length(N2>0)){
-    #   Map[N1[N2],paste0(CROP,"_CV")]<-0
-    # }
-
   }
 
   return(Map)
@@ -130,7 +126,7 @@ StackExtractor1<-function(Data,ExtractBy,SumCols,prod_cols,area_cols,vop_cols){
     X<-Stacked[[i]]
     Stats<-terra::zonal(X[[SumCols]],X[["Farming_System"]],fun=sum,na.rm=T)
     colnames(Stats)[colnames(Stats)=="CellSize.ha"]<-"Area.ha"
-    Stats$RainCV.ln<-log(zonal(X[["RainCV"]],X[["Farming_System"]],fun=mean,na.rm=T)$RainCV)
+    Stats$RainCV.ln<-log(terra::zonal(X[["RainCV"]],X[["Farming_System"]],fun=mean,na.rm=T)$RainCV)
     Stats$Country<-names(Stacked)[i]
     Stats
   }))
@@ -177,16 +173,17 @@ AnnIncFun<-function(Stats.Core,vop_cols,Pr.Inc,AddFS){
 #' MarginalInc
 #' Function to calculate marginal increase in value of production (VoP):
 #' @export
-MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,Non_BCR){
+MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,Non_BCR,CostAdopt,CostNonAdopt){
 
 
-  CostAdopt<-(Yield*Price)/Non_BCR
-  CostNonAdopt<-((1+Pr.Inc)*Yield*Price)/Non_BCR
+  if(is.na(CostAdopt)|is.na(CostNonAdopt)){
+    CostNonAdopt<-(Yield*Price)/Non_BCR
+    CostAdopt<-((1+Pr.Inc)*Yield*Price)/Non_BCR
+  }
 
   Data<-data.table(Y_non_adopt=Yield,
                    Y_adopt=Yield*(1+Pr.Inc),
-                   Year=1:Years
-  )
+                   Year=1:Years)
 
   Total_adoption<-Ad.Rate
 
@@ -215,7 +212,7 @@ MarginalInc<-function(Ad.Rate,Pr.Inc,Years,Yield,Area,Price,VOP,Non_BCR){
 #' MIwrapper
 #' Wrapper function for marginal increase in VoP which restructures data for analysis
 #' @export
-MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,Non_BCR){
+MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,Non_BCR,CostAdopt,CostNonAdopt){
 
   ValCols<-paste0(rep(Commodity,each=4),c("_vop","_yield","_price","_area"))
 
@@ -242,7 +239,9 @@ MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,Non_BCR){
                                   Area=area,
                                   Price=price,
                                   VOP=vop,
-                                  Non_BCR=Non_BCR),
+                                  Non_BCR=Non_BCR,
+                                  CostAdopt=CostAdopt,
+                                  CostNonAdopt=CostNonAdopt),
                      by=list(Farming_System,Country,Crop,Area.ha,Ad.Rate,Pr.Inc)]
   return(Stats.Marg)
 }
@@ -254,9 +253,9 @@ AvLoss<-function(Mean,SD,Change,Fixed,Reps=100000){
 
   # Calculate new standard deviation based on changed CV
   if(Fixed){
-    SDcis<-((SD/Mean)-(Change/100))*Mean
+    SDcis<-((SD/Mean)-(Change/100))*Mean # Change value is substracted from CV
   }else{
-    SDcis<-((SD/Mean)*(1-(Change/100)))*Mean
+    SDcis<-((SD/Mean)*(1-(Change/100)))*Mean # Change value is applied as a proportional reduction in CV
   }
 
   if(!SDcis<=0){
@@ -357,12 +356,12 @@ InvestDataWrapper<-function(Data,InvestStatCrops,ProjectCost,DiscountRate,StartP
                      DiscountRate=DiscountRate,
                      Values=Cashflow,
                      ReturnSum=T),
-          IRR=jrvFinance::irr(
+          IRR=as.numeric(jrvFinance::irr(
             if(StartPeriod>0){
               c(-ProjectCost,rep(0,StartPeriod-1),Cashflow)
             }else{
               abs(Cashflow+c(-ProjectCost,rep(0,(.N-1))))
-            })),
+            }))),
     by=list(Ad.Rate,Pr.Inc,CISinc)][,BCR:=NPV/abs(ProjectCost)][,IRR:=as.numeric(IRR)*100]
 
 
@@ -373,17 +372,18 @@ InvestDataWrapper<-function(Data,InvestStatCrops,ProjectCost,DiscountRate,StartP
 AreaCalc<-function(Stats,CountryAreas){
 
   Data<-Stats[,ToTArea:=CountryAreas[match(Stats$Country,ADMIN),area]
-  ][,Area:=round(Area.ha/ToTArea,1)
+  ][,Area:=Area.ha/ToTArea
   ][,list(Country,Farming_System,Area)]
 
 
   ToTArea<-CountryAreas[ADMIN %in% Stats$Country,sum(area)]
 
   Data2<-Stats[,list(Area.ha=sum(Area.ha,na.rm=T)),by=Farming_System
-  ][,Area:=round(100*Area.ha/ToTArea,1)
+  ][,Area:=round(100*Area.ha/ToTArea,2)
   ][,Country:="Total"
   ][,list(Country,Farming_System,Area)]
 
+  Data[,Area:=round(100*Area,2)]
   Data<-rbind(Data,Data2)
 
   Data<-dcast(data=Data,formula=Country~Farming_System, value.var = "Area")
