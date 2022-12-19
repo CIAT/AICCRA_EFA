@@ -1,5 +1,5 @@
 source("EFA functions.R")
-
+require(data.table)
 
 CountriesChoice<-c("Kenya","Burundi","Tanzania","Uganda","Rwanda")
 SpillCountriesChoice<-c("Democratic Republic of the Congo","Ethiopia","South Sudan","Somalia","Malawi","Zambia","Mozambique")
@@ -7,11 +7,18 @@ SpillCountriesChoice<-c("Democratic Republic of the Congo","Ethiopia","South Sud
 CountriesChoice<-"Kenya"
 SpillCountriesChoice<-"Tanzania"
 
+LSvop_options<-data.table::fread("Data/Herrero/LS Files.csv")
+LSChoice<-"Bovine meat"
+
 IncTot<-"No"
 BorderColCore<-"#000000"
 BorderColSpill<-"#000000"
+MS_options<-data.table::fread("Data/MapSPAM/MS Files.csv")
 MSTechCode<-MS_options[Tech=="all technologies",unique(TechCode)]
 FS_Choice<-"GLPS"
+
+CropChoice<-c("maize","bean","cassava")
+
 MSAreaType<-"Physical"
 
 # Analysis params
@@ -62,6 +69,35 @@ Area_Unit<-if(Area_Name=="ha"){
           10000
         }}}}
 
+
+BaseRaster<-terra::rast("Data/cell5m_livestock_vop.tif")
+CGIAR_countries_sf<-sf::read_sf("Data/CGIAR_region/CGIAR_countries_simplified.shp",options = "ENCODING=UTF8")
+
+CGIAR_countries_sf<-CGIAR_countries_sf[CGIAR_countries_sf$CG_REG %in% c("ESA","WCA") |
+                                         CGIAR_countries_sf$ADMIN %in% c("Morocco","Western Sahara","Libya","Egypt","Algeria","Tunisia","Sudan"),]
+
+sf::st_crs(CGIAR_countries_sf)<-4326
+CGIAR_countries_sf$ADMIN[CGIAR_countries_sf$ADMIN=="United Republic of Tanzania"]<-"Tanzania"
+CGIAR_countries_sf$ADMIN[CGIAR_countries_sf$ADMIN=="Ivory Coast"]<-"Cote d'Ivoire"
+CGIAR_countries<-terra::vect(CGIAR_countries_sf)
+
+BaseRaster<-terra::crop(BaseRaster,CGIAR_countries)
+CellSize.km<-terra::cellSize(BaseRaster,mask=T, unit="km")
+CellSize.ha<-terra::cellSize(BaseRaster,mask=T, unit="ha")
+
+CountryRast<-terra::rasterize(CGIAR_countries,BaseRaster,"ADMIN")
+CountryAreas<-data.table(
+  terra::zonal(
+    x=terra::cellSize(CountryRast,mask=T,"ha"),
+    z=CountryRast,
+    sum))
+
+ExtractBy.Core<-CGIAR_countries[CGIAR_countries$ADMIN %in% CountriesChoice]
+
+ExtractBy.Spillover<-CGIAR_countries[CGIAR_countries$ADMIN %in% SpillCountriesChoice]
+
+ExtractBy.All<-CGIAR_countries[CGIAR_countries$ADMIN %in% c(SpillCountriesChoice,CountriesChoice)]
+
 # GLPS
 GPLS_Legend<-data.table::fread("Data/GLPS/LPS_legend_RGB.csv")
 GPLS_Legend$Code<-0:14
@@ -85,12 +121,8 @@ FS_Selected<-if(FS_Choice=="GLPS"){
 FS_Options<-FS_Options_Fun(FS_Selected=FS_Selected,
                  ExtractBy.All=ExtractBy.All)
 
+FS_Systems<-FS_Options[!FS_Options %in% c("Urban","Unsuitable")]
 
-ExtractBy.Core<-CGIAR_countries[CGIAR_countries$ADMIN %in% CountriesChoice]
-
-ExtractBy.Spillover<-CGIAR_countries[CGIAR_countries$ADMIN %in% SpillCountriesChoice]
-
-ExtractBy.All<-CGIAR_countries[CGIAR_countries$ADMIN %in% c(SpillCountriesChoice,CountriesChoice)]
 
 CGIAR_countries2<-
   CGCountriesFun(CGIAR_countries=CGIAR_countries,
