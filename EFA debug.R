@@ -108,6 +108,10 @@ LPS<-terra::mask(LPS,CGIAR_countries)
 LPS<-LPS-1
 LPS<-terra::categories(LPS,layer=1,value=GPLS_Legend,index=9)
 
+FS1<-terra::rast("Data/Farming_systems/FS1.tif")
+FS2<-terra::rast("Data/Farming_systems/FS2.tif")
+FS_Metadata<-data.table::fread("Data/Farming_systems/FS_Metadata.csv")
+
 FS_Selected<-if(FS_Choice=="GLPS"){
       LPS
     }else{
@@ -328,25 +332,54 @@ Hpop<-terra::mask(terra::crop(Hpop2,Farming_System),Farming_System)
 # Analysis ####
 names(CellSize.ha)<-"Area.ha"
 
-Stacked<-c(Farming_System,
-    LSvop,
-    LSarea,
-    LSprod,
-    MSvop,
-    MSarea,
-    MSprod,
-    Hpop,
-    RainCV
-  )
+
+
+Stacked<-if(!is.null(LSChoice)){
+    c(Farming_System,
+      LSvop,
+      LSarea,
+      LSprod,
+      MSvop,
+      MSarea,
+      MSprod,
+      Hpop,
+      RainCV)
+  }else{
+    c(Farming_System,
+      MSvop,
+      MSarea,
+      MSprod,
+      Hpop,
+      RainCV
+    )
+}
 
 # Columns to sum
 SumCols<-c(names(Stacked)[!names(Stacked) %in% c("Farming_System","CellSize.ha","RainCV")],"CellSize.ha")
 
 
 # Columns to analyse
-prod_cols<-c(names(MSprod),names(LSprod))
-area_cols<-c(names(MSarea),names(LSarea))
-vop_cols<-c(names(MSvop),names(LSvop))
+prod_cols<-
+  if(!is.null(LSChoice)){
+    c(names(MSprod),names(LSprod))
+  }else{
+    names(MSprod)
+  }
+
+area_cols<-
+  if(!is.null(LSChoice)){
+    c(names(MSarea),names(LSarea))
+  }else{
+    MSarea
+  }
+
+
+vop_cols<-
+  if(!is.null(LSChoice)){
+    c(names(MSvop),names(LSvop))
+  }else{
+    MSvop
+  }
 
 
 Stats.Core<-StackExtractor1(Data=Stacked,
