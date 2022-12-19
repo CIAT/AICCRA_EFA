@@ -2,56 +2,56 @@
   <PAMRasterBand band="1">
     <Description>LEV2_DESC</Description>
     <CategoryNames>
-      <Category>Albertine Rift highland perennial subsystem</Category>
-      <Category>Arid pastoral oasis farming system</Category>
-      <Category>Cassava subsystem</Category>
-      <Category>Cassava-cocoyam subsystem</Category>
-      <Category>Cassava-sweet potato-potato subsystem</Category>
-      <Category>Cassava-yam-cocoyam subsystem</Category>
-      <Category>Central African scattered maize-root crop subsystem</Category>
-      <Category>Central Kenyan highland perennial subsystem</Category>
-      <Category>Cereal-pulse-root crop subsystem</Category>
-      <Category>Coral reef fish-based subsystem</Category>
-      <Category>East African agropastoral subsystem</Category>
-      <Category>East African pastoral subsystem</Category>
-      <Category>Ethiopian maize-livestock subsystem</Category>
-      <Category>Fish-based farming system</Category>
-      <Category>Floodplain fish-based subsystem</Category>
-      <Category>Forest-based farming system</Category>
-      <Category>Grape and deciduous fruit perennial mixed subsystem</Category>
-      <Category>Highland livestock-cereal subsystem</Category>
-      <Category>Highland maize-teff subsystem</Category>
-      <Category>Highland wheat-pulse subsystem</Category>
-      <Category>Humid lowland tree crop farming system</Category>
-      <Category>Kenyan-Ugandan hoe-tractor maized mixed subsystem</Category>
-      <Category>Lake fish-based subsystem</Category>
-      <Category>Large-scale irrigated farming system</Category>
-      <Category>Madagascan maize-rice subsystem</Category>
-      <Category>Malawian market-linked maize mixed subsystem</Category>
-      <Category>Mangrove deltaic fish-based subsystem</Category>
-      <Category>Mozambiquan extensive maize mixed subsystem</Category>
-      <Category>North African arid pastoral oasis subsystem</Category>
-      <Category>North African dryland mixed subsystem</Category>
-      <Category>North African fish-based subsystem</Category>
-      <Category>North African highland mixed subsystem</Category>
-      <Category>North African large-scale irrigated subsystem</Category>
-      <Category>North African pastoral subsystem</Category>
-      <Category>North African rainfed perennial mixed subsystem</Category>
-      <Category>Northern Tanzanian highland perennial subsystem</Category>
-      <Category>Root crop-cereal subsystem</Category>
-      <Category>Sahelian agropastoral subsystem</Category>
-      <Category>Sahelian pastoral subsystem</Category>
-      <Category>Sandy coast fish-based subsystem</Category>
-      <Category>Southern African agropastoral subsystem</Category>
-      <Category>Southern African dualistic maize mixed subsystem</Category>
-      <Category>Southern African pastoral subsystem</Category>
-      <Category>Southern Ethiopian highland perennial subsystem</Category>
-      <Category>Southern Tanzanian highland perennial subsystem</Category>
-      <Category>Sugarcane and production forest perennial mixed subsystem</Category>
-      <Category>Tanzanian semi-mechanized maize mixed subsystem</Category>
-      <Category>Western Kenyan highland perennial subsystem</Category>
-      <Category>Yam-cassava subsystem</Category>
-      <Category>Zambian medium population density maize mixed subsystem</Category>
+      <Category>Albertine Rift highland perennial</Category>
+      <Category>Arid pastoral oasis</Category>
+      <Category>Cassava</Category>
+      <Category>Cassava-cocoyam</Category>
+      <Category>Cassava-sweet potato-potato</Category>
+      <Category>Cassava-yam-cocoyam</Category>
+      <Category>Central African scattered maize-root crop</Category>
+      <Category>Central Kenyan highland perennial</Category>
+      <Category>Cereal-pulse-root crop</Category>
+      <Category>Coral reef fish-based</Category>
+      <Category>East African agropastoral</Category>
+      <Category>East African pastoral</Category>
+      <Category>Ethiopian maize-livestock</Category>
+      <Category>Fish-based</Category>
+      <Category>Floodplain fish-based</Category>
+      <Category>Forest-based</Category>
+      <Category>Grape and deciduous fruit perennial mixed</Category>
+      <Category>Highland livestock-cereal</Category>
+      <Category>Highland maize-teff</Category>
+      <Category>Highland wheat-pulse</Category>
+      <Category>Humid lowland tree crop</Category>
+      <Category>Kenyan-Ugandan hoe-tractor maized mixed</Category>
+      <Category>Lake fish-based</Category>
+      <Category>Large-scale irrigated</Category>
+      <Category>Madagascan maize-rice</Category>
+      <Category>Malawian market-linked maize mixed</Category>
+      <Category>Mangrove deltaic fish-based</Category>
+      <Category>Mozambiquan extensive maize mixed</Category>
+      <Category>North African arid pastoral oasis</Category>
+      <Category>North African dryland mixed</Category>
+      <Category>North African fish-based</Category>
+      <Category>North African highland mixed</Category>
+      <Category>North African large-scale irrigated</Category>
+      <Category>North African pastoral</Category>
+      <Category>North African rainfed perennial mixed</Category>
+      <Category>Northern Tanzanian highland perennial</Category>
+      <Category>Root crop-cereal</Category>
+      <Category>Sahelian agropastoral</Category>
+      <Category>Sahelian pastoral</Category>
+      <Category>Sandy coast fish-based</Category>
+      <Category>Southern African agropastoral</Category>
+      <Category>Southern African dualistic maize mixed</Category>
+      <Category>Southern African pastoral</Category>
+      <Category>Southern Ethiopian highland perennial</Category>
+      <Category>Southern Tanzanian highland perennial</Category>
+      <Category>Sugarcane and production forest perennial mixed</Category>
+      <Category>Tanzanian semi-mechanized maize mixed</Category>
+      <Category>Western Kenyan highland perennial</Category>
+      <Category>Yam-cassava</Category>
+      <Category>Zambian medium population density maize mixed</Category>
       <Category></Category>
       <Category></Category>
       <Category></Category>

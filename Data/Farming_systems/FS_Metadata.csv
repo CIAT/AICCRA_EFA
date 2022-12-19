@@ -1,51 +1,51 @@
-LEV_2_2016,LEV_1_2016,LEV1_DESC,LEV2_DESC,LEV_2_ALT_
-1,1,Maize mixed farming system,Ethiopian maize-livestock subsystem,Ethiopian maize-livestock subsystem
-2,1,Maize mixed farming system,Kenyan-Ugandan hoe-tractor maized mixed subsystem,Kenyan-Ugandan hoe-tractor subsystem
-3,1,Maize mixed farming system,Tanzanian semi-mechanized maize mixed subsystem,Tanzanian semi-mechanized subsystem
-4,1,Maize mixed farming system,Malawian market-linked maize mixed subsystem,Malawian market-linked subsystem
-5,1,Maize mixed farming system,Central African scattered maize-root crop subsystem,Central African scattered maize-root crop subsystem
-6,1,Maize mixed farming system,Mozambiquan extensive maize mixed subsystem,Mozambiquan extensive subsystem
-7,1,Maize mixed farming system,Southern African dualistic maize mixed subsystem,Southern African dualistic subsystem
-8,1,Maize mixed farming system,Zambian medium population density maize mixed subsystem,Zambian medium population density subsystem
-9,1,Maize mixed farming system,Madagascan maize-rice subsystem,Madagascan maize-rice subsystem
-10,3,Highland perennial farming system,Southern Ethiopian highland perennial subsystem,Southern Ethiopian subsystem
-11,3,Highland perennial farming system,Albertine Rift highland perennial subsystem,Albertine Rift subsystem
-12,3,Highland perennial farming system,Northern Tanzanian highland perennial subsystem,Northern Tanzanian subsystem
-13,3,Highland perennial farming system,Southern Tanzanian highland perennial subsystem,Southern Tanzanian subsystem
-14,3,Highland perennial farming system,Central Kenyan highland perennial subsystem,Central Kenyan subsystem
-15,3,Highland perennial farming system,Western Kenyan highland perennial subsystem,Western Kenyan subsystem
-16,6,Highland mixed farming system,Highland livestock-cereal subsystem,Highland livestock-cereal subsystem
-17,6,Highland mixed farming system,Highland wheat-pulse subsystem,Highland wheat-pulse subsystem
-18,6,Highland mixed farming system,Highland maize-teff subsystem,Highland maize-teff subsystem
-19,5,Cereal-root crop mixed farming system,Cereal-pulse-root crop subsystem,Cereal-pulse subsystem
-20,5,Cereal-root crop mixed farming system,Root crop-cereal subsystem,Root crop-cereal subsystem
-21,2,Agropastoral farming system,Sahelian agropastoral subsystem,Sahelian subsystem
-22,2,Agropastoral farming system,East African agropastoral subsystem,East African subsystem
-23,2,Agropastoral farming system,Southern African agropastoral subsystem,Southern African subsystem
-24,4,Root and tuber crop farming system,Yam-cassava subsystem,Yam-cassava subsystem
-25,4,Root and tuber crop farming system,Cassava-yam-cocoyam subsystem,Cassava-yam-cocoyam subsystem
-26,4,Root and tuber crop farming system,Cassava-cocoyam subsystem,Cassava-cocoyam subsystem
-27,4,Root and tuber crop farming system,Cassava-sweet potato-potato subsystem,Cassava-sweet potato-potato subsystem
-28,4,Root and tuber crop farming system,Cassava subsystem,Cassava subsystem
-29,9,Fish-based farming system,Coral reef fish-based subsystem,Coral reef subsystem
-30,9,Fish-based farming system,Sandy coast fish-based subsystem,Sandy coast subsystem
-31,9,Fish-based farming system,Mangrove deltaic fish-based subsystem,Mangrove deltaic subsystem
-32,9,Fish-based farming system,Lake fish-based subsystem,Lake subsystem
-33,9,Fish-based farming system,Floodplain fish-based subsystem,Floodplain subsystem
-34,8,Pastoral farming system,Sahelian pastoral subsystem,Sahelian subsystem
-35,8,Pastoral farming system,East African pastoral subsystem,East African subsystem
-36,8,Pastoral farming system,Southern African pastoral subsystem,Southern African subsystem
-39,12,Perennial mixed farming system,Grape and deciduous fruit perennial mixed subsystem,Grape and deciduous fruit subsystem
-40,12,Perennial mixed farming system,Sugarcane and production forest perennial mixed subsystem,Sugarcane and production forest subsystem
-80,8,Pastoral farming system,North African pastoral subsystem,North African subsystem
-110,11,Large-scale irrigated farming system,North African large-scale irrigated subsystem,North African large-scale irrigated subsystem
-120,12,Perennial mixed farming system,North African rainfed perennial mixed subsystem,North African rainfed mixed subsystem
-130,13,Arid pastoral oasis farming system,North African arid pastoral oasis subsystem,North African arid pastoral oasis subsystem
-200,2,Agropastoral farming system,North African dryland mixed subsystem,North African dryland mixed subsystem
-600,6,Highland mixed farming system,North African highland mixed subsystem,North African highland mixed subsystem
-900,9,Fish-based farming system,North African fish-based subsystem,North African fish-based subsystem
-9907,7,Humid lowland tree crop farming system,Humid lowland tree crop farming system,Humid lowland tree crop farming system
-9909,9,Fish-based farming system,Fish-based farming system,Fish-based farming system
-9910,10,Forest-based farming system,Forest-based farming system,Forest-based farming system
-9911,11,Large-scale irrigated farming system,Large-scale irrigated farming system,Large-scale irrigated farming system
-9913,13,Arid pastoral oasis farming system,Arid pastoral oasis farming system,Arid pastoral oasis farming system
+LEV_2_2016,LEV_1_2016,LEV1_DESC,LEV2_DESC,LEV_2_ALT_,Code1,Code2
+1,1,Maize mixed,Ethiopian maize-livestock,Ethiopian maize-livestock subsystem,MaM,EtML
+2,1,Maize mixed,Kenyan-Ugandan hoe-tractor maized mixed,Kenyan-Ugandan hoe-tractor subsystem,MaM,KeUHTMM
+3,1,Maize mixed,Tanzanian semi-mechanized maize mixed,Tanzanian semi-mechanized subsystem,MaM,TaSMMM
+4,1,Maize mixed,Malawian market-linked maize mixed,Malawian market-linked subsystem,MaM,MaMLMM
+5,1,Maize mixed,Central African scattered maize-root crop,Central African scattered maize-root crop subsystem,MaM,CeASMRC
+6,1,Maize mixed,Mozambiquan extensive maize mixed,Mozambiquan extensive subsystem,MaM,MoEMM
+7,1,Maize mixed,Southern African dualistic maize mixed,Southern African dualistic subsystem,MaM,SoADMM
+8,1,Maize mixed,Zambian medium population density maize mixed,Zambian medium population density subsystem,MaM,ZaMPDMM
+9,1,Maize mixed,Madagascan maize-rice,Madagascan maize-rice subsystem,MaM,MaMR
+10,3,Highland perennial,Southern Ethiopian highland perennial,Southern Ethiopian subsystem,HiP,SoEHP
+11,3,Highland perennial,Albertine Rift highland perennial,Albertine Rift subsystem,HiP,AlRHP
+12,3,Highland perennial,Northern Tanzanian highland perennial,Northern Tanzanian subsystem,HiP,NoTHP
+13,3,Highland perennial,Southern Tanzanian highland perennial,Southern Tanzanian subsystem,HiP,SoTHP
+14,3,Highland perennial,Central Kenyan highland perennial,Central Kenyan subsystem,HiP,CeKHP
+15,3,Highland perennial,Western Kenyan highland perennial,Western Kenyan subsystem,HiP,WeKHP
+16,6,Highland mixed,Highland livestock-cereal,Highland livestock-cereal subsystem,HiM,HiLC
+17,6,Highland mixed,Highland wheat-pulse,Highland wheat-pulse subsystem,HiM,HiWP
+18,6,Highland mixed,Highland maize-teff,Highland maize-teff subsystem,HiM,HiMT
+19,5,Cereal-root crop mixed,Cereal-pulse-root crop,Cereal-pulse subsystem,CeCM,CePRC
+20,5,Cereal-root crop mixed,Root crop-cereal,Root crop-cereal subsystem,CeCM,RoCC
+21,2,Agropastoral,Sahelian agropastoral,Sahelian subsystem,AgNAA,SaA
+22,2,Agropastoral,East African agropastoral,East African subsystem,AgNAA,EaAA
+23,2,Agropastoral,Southern African agropastoral,Southern African subsystem,AgNAA,SoAA
+24,4,Root and tuber crop,Yam-cassava,Yam-cassava subsystem,RoATC,YaC
+25,4,Root and tuber crop,Cassava-yam-cocoyam,Cassava-yam-cocoyam subsystem,RoATC,CaYC
+26,4,Root and tuber crop,Cassava-cocoyam,Cassava-cocoyam subsystem,RoATC,CaC
+27,4,Root and tuber crop,Cassava-sweet potato-potato,Cassava-sweet potato-potato subsystem,RoATC,CaSPP
+28,4,Root and tuber crop,Cassava,Cassava subsystem,RoATC,CaNAC
+29,9,Fish-based,Coral reef fish-based,Coral reef subsystem,FiNAF,CoRFB
+30,9,Fish-based,Sandy coast fish-based,Sandy coast subsystem,FiNAF,SaCFB
+31,9,Fish-based,Mangrove deltaic fish-based,Mangrove deltaic subsystem,FiNAF,MaDFB
+32,9,Fish-based,Lake fish-based,Lake subsystem,FiNAF,LaFB
+33,9,Fish-based,Floodplain fish-based,Floodplain subsystem,FiNAF,FlFB
+34,8,Pastoral,Sahelian pastoral,Sahelian subsystem,PaNAP,SaP
+35,8,Pastoral,East African pastoral,East African subsystem,PaNAP,EaAP
+36,8,Pastoral,Southern African pastoral,Southern African subsystem,PaNAP,SoAP
+39,12,Perennial mixed,Grape and deciduous fruit perennial mixed,Grape and deciduous fruit subsystem,PeM,GrADFPM
+40,12,Perennial mixed,Sugarcane and production forest perennial mixed,Sugarcane and production forest subsystem,PeM,SuAPFPM
+80,8,Pastoral,North African pastoral,North African subsystem,PaNAP,NoAP
+110,11,Large-scale irrigated,North African large-scale irrigated,North African large-scale irrigated subsystem,LaI,NoALSI
+120,12,Perennial mixed,North African rainfed perennial mixed,North African rainfed mixed subsystem,PeM,NoARPM
+130,13,Arid pastoral oasis,North African arid pastoral oasis,North African arid pastoral oasis subsystem,ArPO,NoAAPO
+200,2,Agropastoral,North African dryland mixed,North African dryland mixed subsystem,AgNAA,NoADM
+600,6,Highland mixed,North African highland mixed,North African highland mixed subsystem,HiM,NoAHM
+900,9,Fish-based,North African fish-based,North African fish-based subsystem,FiNAF,NoAFB
+9907,7,Humid lowland tree crop,Humid lowland tree crop,Humid lowland tree crop farming system,HuLTC,HuLTC
+9909,9,Fish-based,Fish-based,Fish-based farming system,FiNAF,FiB
+9910,10,Forest-based,Forest-based,Forest-based farming system,FoNAF,FoB
+9911,11,Large-scale irrigated,Large-scale irrigated,Large-scale irrigated farming system,LaI,LaSI
+9913,13,Arid pastoral oasis,Arid pastoral oasis,Arid pastoral oasis farming system,ArPO,ArPO
