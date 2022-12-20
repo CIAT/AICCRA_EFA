@@ -14,7 +14,8 @@ runtime: shiny
 </style>
   
 ```{r Setup, include=FALSE}
-knitr::opts_knit$set(root.dir = "C:/Users/Peter Steward/OneDrive - CGIAR/Projects/AICCRA/AICCRA_EFA")
+knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
+#knitr::opts_knit$set(root.dir = getwd())
 knitr::opts_chunk$set(echo = F)
 ```
 
