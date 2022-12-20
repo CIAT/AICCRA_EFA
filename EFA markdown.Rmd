@@ -483,7 +483,14 @@ Farming_System<-reactive({
 
 ```{r Datasets- Plot farming system, echo =F}
 renderPlot({terra::plot(Farming_System(),
-                        main="Global Distribution of LPS (Robinson et al. 2014)",
+                        main=if(input$FS_Choice=="GLPS"){
+                          "Livestock production systems"
+                          }else{
+                            if(input$FS_Choice=="Adaptation Atlas L1"){
+                              "Farming systems level 1"
+                              }else{
+                                "Farming systems level 2"
+                                }},
                         pax=list(cex.axis=input$TextSize),
                         plg=list(x=input$LegPos,cex = input$TextSize,ncol=input$LegCols),
                         col=viridis(n=nrow(levels(Farming_System())[[1]]), 
