@@ -2,7 +2,7 @@
 title: "AICCRA - EFA"
 author: "Peter Steward"
 date: "5/12/2022"
-output: html_document
+output: html_notebook
 runtime: shiny
 ---
 <style type="text/css">
@@ -2245,3 +2245,8 @@ VOP delta = VOP tot – VOP
 After some algebra,  
 VOP delta = VOP * (1 - (((1+a/100)^10 ) - 1)) + VOP * (1+y/100) * (((1+a0/100)^10) - 1) – VOP  
 
+
+### Session Info
+```{r Session Info, echo=F}
+sessionInfo()
+```
