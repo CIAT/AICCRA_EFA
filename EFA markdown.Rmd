@@ -14,8 +14,8 @@ runtime: shiny
 </style>
   
 ```{r Setup, include=FALSE}
-#knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
-#knitr::opts_knit$set(root.dir = getwd())
+# knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
+# knitr::opts_knit$set(root.dir = getwd())
 knitr::opts_chunk$set(echo = F)
 ```
 
@@ -428,7 +428,7 @@ CellSize.ha<-terra::cellSize(BaseRaster,mask=T, unit="ha")
 CountryRast<-terra::rasterize(CGIAR_countries,BaseRaster,"ADMIN")
 CountryAreas<-data.table(
   terra::zonal(
-    x=terra::cellSize(CountryRast,mask=T,"ha"),
+    x=terra::cellSize(CountryRast,mask=T, unit="ha"),
     z=CountryRast,
     sum))
 
