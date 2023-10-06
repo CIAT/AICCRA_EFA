@@ -12,37 +12,33 @@ runtime: shiny
   margin-right: auto;
 }
 </style>
-  
-```{r Setup, include=FALSE}
-#knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
-#knitr::opts_knit$set(root.dir = getwd())
-knitr::opts_chunk$set(echo = F)
-```
 
 ```{r Setup - load packages,echo=F,message=FALSE}
-if(!require("pacman", character.only = TRUE)){install.packages("pacman",dependencies = T)}
 
-required.packages <- c("colourpicker",
-                       "data.table",
-                       "dplyr",
-                       "DT",
-                       "FAOSTAT",
-                       "jrvFinance",
-                       "raster",
-                       "RJSONIO",
-                       "rgdal",
-                       "terra",
-                       "shiny",
-                       "sf",
-                       "viridis")
-
-pacman::p_load(char=required.packages,install = T,character.only = T)
+library(colourpicker)
+library(data.table)
+library(dplyr)
+library(DT)
+library(FAOSTAT)
+library(jrvFinance)
+library(raster)
+library(RJSONIO)
+library(rgdal)
+library(terra)
+library(shiny)
+library(sf)
+library(viridis)
+library(knitr)
 
 options(scipen = 999)
 ```
 
+```{r Setup - chunk options, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
 ```{r Setup - source functions,echo=F,message=FALSE}
-source("EFA functions.R")
+source("EFA_functions.R")
 ```
 
 ## AICCRA - Economic and Financial Analysis Tool (EFAt) {.tabset .tabset-fade .tabset-pills}
@@ -428,7 +424,7 @@ CellSize.ha<-terra::cellSize(BaseRaster,mask=T, unit="ha")
 CountryRast<-terra::rasterize(CGIAR_countries,BaseRaster,"ADMIN")
 CountryAreas<-data.table(
   terra::zonal(
-    x=terra::cellSize(CountryRast,mask=T,"ha"),
+    x=terra::cellSize(CountryRast,mask=T, unit="ha"),
     z=CountryRast,
     sum))
 
