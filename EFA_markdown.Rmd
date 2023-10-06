@@ -33,7 +33,7 @@ library(knitr)
 options(scipen = 999)
 ```
 
-```{r Setup, include=FALSE}
+```{r Setup - chunk options, include=FALSE}
 knitr::opts_chunk$set(echo = F)
 ```
 
