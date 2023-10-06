@@ -12,12 +12,6 @@ runtime: shiny
   margin-right: auto;
 }
 </style>
-  
-```{r Setup, include=FALSE}
-# knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
-# knitr::opts_knit$set(root.dir = getwd())
-knitr::opts_chunk$set(echo = F)
-```
 
 ```{r Setup - load packages,echo=F,message=FALSE}
 if(!require("pacman", character.only = TRUE)){install.packages("pacman",dependencies = T)}
@@ -41,8 +35,14 @@ pacman::p_load(char=required.packages,install = T,character.only = T)
 options(scipen = 999)
 ```
 
+```{r Setup, include=FALSE}
+# knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
+# knitr::opts_knit$set(root.dir = getwd())
+knitr::opts_chunk$set(echo = F)
+```
+
 ```{r Setup - source functions,echo=F,message=FALSE}
-source("EFA functions.R")
+source("EFA_functions.R")
 ```
 
 ## AICCRA - Economic and Financial Analysis Tool (EFAt) {.tabset .tabset-fade .tabset-pills}
