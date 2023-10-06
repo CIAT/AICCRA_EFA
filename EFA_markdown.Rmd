@@ -34,8 +34,6 @@ options(scipen = 999)
 ```
 
 ```{r Setup, include=FALSE}
-# knitr::opts_knit$set(root.dir = "C:/AICCRA_EFA")
-# knitr::opts_knit$set(root.dir = getwd())
 knitr::opts_chunk$set(echo = F)
 ```
 
