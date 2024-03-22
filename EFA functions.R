@@ -245,10 +245,10 @@ MIwrapper<-function(Data,Ad.Rates,Pr.Inc,Years,Commodity,Non_BCR,CostAdopt,CostN
                      by=list(Farming_System,Country,Crop,Area.ha,Ad.Rate,Pr.Inc)]
   return(Stats.Marg)
 }
-#' AvLoss
-#' Function to calculate avoided yield loss from a reduction in yield variability (CV
+#' AvLossold
+#' Function to calculate avoided yield loss from a reduction in yield variability (CV)
 #' @export
-AvLoss<-function(Mean,SD,Change,Fixed,Reps=100000){
+AvLossold<-function(Mean,SD,Change,Fixed,Reps=100000){
   #Calculate co-efficient of variation
 
   # Calculate new standard deviation based on changed CV
@@ -276,6 +276,47 @@ AvLoss<-function(Mean,SD,Change,Fixed,Reps=100000){
   }
 
   return(AVLoss)
+}
+#' AvLoss
+#' Function to calculate avoided yield loss from a reduction in yield variability (CV)
+AvLoss <- function(Mean,SD, Change, Fixed = FALSE, reps = 10^6) {
+
+  change<-Change/100
+  # Calculate co-efficient of variation
+  x <- Mean
+  cv <- Mean/SD
+
+  # Calculate new standard deviations
+  if(Fixed){
+    # Ensure fixed change does not exceed cv
+    change <- min(change, cv)
+    sd_with<-(cv - change) * x
+  }else{
+    sd_with<-(cv * (1 - change)) * x
+  }
+
+  sd_without <- cv * x
+
+  # Avoid computation if the standard deviation would be negative
+  if (sd_with < 0) {
+    return(NA)
+  }
+
+  # Generate normal distributions
+  with <- rnorm(n = reps, mean = x, sd = sd_with)
+  without <- rnorm(n = reps, mean = x, sd = sd_without)
+
+  # Direct calculation of sum of lower half without sorting
+  with_lh <- sum(with[with <= median(with)])
+  without_lh <- sum(without[without <= median(without)])
+
+  # Calculate average loss
+  avloss <- 100*(with_lh - without_lh) / sum(without)
+
+  avloss[avloss<0]<-0
+
+
+  return(avloss)
 }
 #' AvLossWrapper
 #' Wrapper function for avoided yield loss which recalculates marginal benefits
